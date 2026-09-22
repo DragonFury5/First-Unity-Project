@@ -22,13 +22,11 @@ public class Deck : MonoBehaviour
         remaining = new List<CardData>(cards);
     }
 
-    
-
     public Card DrawCard()
     {
         if (cardPrefab == null)
         {
-            Debug.LogError("Assign CardPrefab to the Deck script on " + gameObject.name);
+            Debug.LogError("Assign CardPrefab to the Deck script on " + gameObject.name, this);
             return null;
         }
 
@@ -39,33 +37,30 @@ public class Deck : MonoBehaviour
 
         if (remaining == null || remaining.Count == 0)
         {
-            Debug.LogWarning("Deck has no CardData assigned!");
+            Debug.LogWarning("Deck has no CardData assigned in Inspector!", this);
             return null;
         }
-
-Vector3 pos = spawnPoint != null ? spawnPoint.position : transform.position;
-    
-    // DEBUG 1: Print world position of spawn
-    Debug.Log($"[Deck Debug] Spawning card at World Position: {pos}");
-
-    // DEBUG 2: Verify Main Camera reference
-    if (Camera.main == null)
-    {
-        Debug.LogError("[Deck Debug] NO CAMERA TAGGED AS 'MainCamera' IN SCENE!");
-    }
-    else
-    {
-        Vector3 viewportPos = Camera.main.WorldToViewportPoint(pos);
-        Debug.Log($"[Deck Debug] Viewport Pos: {viewportPos} (Values outside 0-1 mean off-screen!)");
-    }
-
-    GameObject go = Instantiate(cardPrefab, pos, Quaternion.identity);
 
         int index = Random.Range(0, remaining.Count);
         CardData picked = remaining[index];
         remaining.RemoveAt(index);
 
         Vector3 pos = spawnPoint != null ? spawnPoint.position : transform.position;
+
+        // DEBUG 1: Print world position of spawn
+        Debug.Log($"[Deck Debug] Spawning card at World Position: {pos}");
+
+        // DEBUG 2: Verify Main Camera reference & viewport bounds
+        if (Camera.main == null)
+        {
+            Debug.LogError("[Deck Debug] NO CAMERA TAGGED AS 'MainCamera' IN SCENE!");
+        }
+        else
+        {
+            Vector3 viewportPos = Camera.main.WorldToViewportPoint(pos);
+            Debug.Log($"[Deck Debug] Viewport Pos: {viewportPos} (Values outside 0 to 1 mean off-screen!)");
+        }
+
         GameObject go = Instantiate(cardPrefab, pos, Quaternion.identity);
 
         Card card = go.GetComponent<Card>();
@@ -75,29 +70,19 @@ Vector3 pos = spawnPoint != null ? spawnPoint.position : transform.position;
             card.ownerId = ownerId;
         }
 
-    
-
         return card;
     }
 
     void OnMouseDown()
-{
-    // Draw the card
-    Card drawn = DrawCard();
-    if (drawn == null) return;
-
-    // Immediately hand the drag action to the card
-    Draggable d = drawn.GetComponent<Draggable>();
-    if (d != null)
     {
-        d.autoBeginDrag = true;
-        d.BeginDrag();
-        
+        Card drawn = DrawCard();
+        if (drawn == null) return;
+
+        Draggable d = drawn.GetComponent<Draggable>();
+        if (d != null)
+        {
+            d.autoBeginDrag = true;
+            d.BeginDrag();
+        }
     }
-
-    
-}
-
-
-
 }

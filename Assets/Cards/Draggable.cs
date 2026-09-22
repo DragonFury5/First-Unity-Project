@@ -73,9 +73,8 @@ public class Draggable : MonoBehaviour
 
     void OnMouseDown()
     {
-        BeginDrag();
         Debug.Log($"[Draggable Debug] Card '{gameObject.name}' clicked successfully at position {transform.position}!");
-    BeginDrag();
+        BeginDrag();
     }
 
     public void BeginDrag()
