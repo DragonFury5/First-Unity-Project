@@ -46,49 +46,56 @@ public class Draggable : MonoBehaviour
     }
 
     void Update()
+{
+    // Skip Draggable scale control during Battle phase so CardSelector can enlarge/scale the card freely
+    bool isBattlePhase = PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle;
+
+    if (!isBattlePhase)
     {
         float currentMultiplier = isDragging ? grabScaleMultiplier : 1f;
         Vector3 targetScale = originalScale * currentMultiplier;
         transform.localScale = Vector3.Lerp(transform.localScale, targetScale, Time.deltaTime * scaleSpeed);
-
-        if (isDragging)
-        {
-            transform.position = GetMouseWorldPosition() + grabOffset;
-
-            if (Input.GetMouseButtonUp(0))
-            {
-                EndDrag();
-            }
-        }
-        else if (isReturning)
-        {
-            transform.position = Vector3.Lerp(transform.position, homePosition, Time.deltaTime * returnSpeed);
-            if (Vector3.Distance(transform.position, homePosition) < 0.01f)
-            {
-                transform.position = homePosition;
-                isReturning = false;
-            }
-        }
     }
 
-    void OnMouseDown()
+    if (isDragging)
     {
-        Debug.Log($"[Draggable Debug] Card '{gameObject.name}' clicked successfully at position {transform.position}!");
+        transform.position = GetMouseWorldPosition() + grabOffset;
+
+        if (Input.GetMouseButtonUp(0))
+        {
+            EndDrag();
+        }
+    }
+    else if (isReturning)
+    {
+        transform.position = Vector3.Lerp(transform.position, homePosition, Time.deltaTime * returnSpeed);
+        if (Vector3.Distance(transform.position, homePosition) < 0.01f)
+        {
+            transform.position = homePosition;
+            isReturning = false;
+        }
+    }
+}
+
+   void OnMouseDown()
+{
+    // Only attempt drag if we are in Setup or Recover phases
+    if (CanDragInCurrentPhase())
+    {
         BeginDrag();
     }
+}
+    private bool CanDragInCurrentPhase()
+{
+    if (PhaseManager.Instance == null) return true;
 
+    GamePhase phase = PhaseManager.Instance.currentPhase;
+    return phase == GamePhase.Setup || phase == GamePhase.Recover;
+}
    public void BeginDrag()
 {
-    // Gating check: Only allow dragging during Phase 1 (Setup) and Phase 3 (Recover)
-    if (PhaseManager.Instance != null)
-    {
-        GamePhase phase = PhaseManager.Instance.currentPhase;
-        if (phase != GamePhase.Setup && phase != GamePhase.Recover)
-        {
-            Debug.Log($"[Draggable] Cannot drag cards during {phase} phase!");
-            return;
-        }
-    }
+    // Gate dragging by phase without spamming warning logs
+    if (!CanDragInCurrentPhase()) return;
 
     if (isDragging) return;
     Initialize();

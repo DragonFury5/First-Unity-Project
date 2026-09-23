@@ -7,6 +7,10 @@ public class DamageText : MonoBehaviour
     public float fadeSpeed = 2f;
     public float lifeTime = 0.8f;
 
+    [Header("Rendering Settings")]
+    public string sortingLayerName = "Default"; // Change to your Card sorting layer if using custom layers
+    public int sortingOrder = 999;
+
     private TextMeshPro textMesh;
     private Color textColor;
 
@@ -16,25 +20,39 @@ public class DamageText : MonoBehaviour
         if (textMesh != null)
         {
             textColor = textMesh.color;
+            ApplySorting();
         }
     }
 
     public void Setup(int damageAmount)
     {
         if (textMesh == null) textMesh = GetComponent<TextMeshPro>();
-        textMesh.text = $"-{damageAmount} ⚔️";
+        
+        textMesh.text = $"-{damageAmount} DMG";
         textColor = Color.red;
         textMesh.color = textColor;
+        
+        ApplySorting();
         
         Destroy(gameObject, lifeTime);
     }
 
+    private void ApplySorting()
+    {
+        if (textMesh != null)
+        {
+            textMesh.sortingOrder = sortingOrder;
+            if (!string.IsNullOrEmpty(sortingLayerName))
+            {
+                textMesh.sortingLayerID = SortingLayer.NameToID(sortingLayerName);
+            }
+        }
+    }
+
     void Update()
     {
-        // Float upward
         transform.position += Vector3.up * moveSpeed * Time.deltaTime;
 
-        // Fade out alpha
         if (textMesh != null)
         {
             textColor.a -= fadeSpeed * Time.deltaTime;

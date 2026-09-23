@@ -55,7 +55,7 @@ public class EnemyAI : MonoBehaviour
                 if (card != null)
                 {
                     card.Apply(data);
-                    card.ownerId = 1; // 1 = Enemy
+                    card.ownerId = 2; // 1 = Enemy
                 }
 
                 Draggable draggable = go.GetComponent<Draggable>();

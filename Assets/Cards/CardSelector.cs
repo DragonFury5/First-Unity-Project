@@ -7,13 +7,12 @@ public class CardSelector : MonoBehaviour
     public static CardSelector Instance { get; private set; }
 
     [Header("Selection Visuals")]
-    public float selectScaleMultiplier = 1.25f;
+    public float selectScaleMultiplier = 1.3f;
     public float flySpeed = 15f;
-    public float attackOffset = 0.8f; // Stops slightly below enemy card
+    public float attackOffset = 0.8f;
 
     private Card selectedCard;
     private Vector3 originalScale;
-    private Vector3 originalPosition;
     private bool isAttacking = false;
 
     void Awake()
@@ -45,13 +44,13 @@ public class CardSelector : MonoBehaviour
 
             if (clickedCard != null)
             {
-                // Player card selected
-                if (clickedCard.ownerId == 0)
+                // Player Card (ownerId == 1) -> Select & Enlarge
+                if (clickedCard.ownerId == 1)
                 {
                     SelectPlayerCard(clickedCard);
                 }
-                // Enemy card targeted
-                else if (clickedCard.ownerId == 1 && selectedCard != null)
+                // Enemy Card (ownerId == 2) while player card is selected -> Attack!
+                else if (clickedCard.ownerId == 2 && selectedCard != null)
                 {
                     StartCoroutine(AttackRoutine(selectedCard, clickedCard));
                 }
@@ -72,9 +71,9 @@ public class CardSelector : MonoBehaviour
 
         selectedCard = card;
         originalScale = selectedCard.transform.localScale;
-        originalPosition = selectedCard.transform.position;
 
-        selectedCard.transform.localScale = originalScale * selectScaleMultiplier;
+        float multiplier = (selectScaleMultiplier <= 1f) ? 1.3f : selectScaleMultiplier;
+        selectedCard.transform.localScale = originalScale * multiplier;
     }
 
     public void DeselectCard()
@@ -103,17 +102,19 @@ public class CardSelector : MonoBehaviour
 
         attacker.transform.position = targetPos;
 
-        // 2. Fetch damage value safely
+        // 2. Deal damage & spawn pop-up
         int dmgValue = attacker != null ? attacker.damage : 3;
-        
+
         if (EnemyAI.Instance != null)
         {
             EnemyAI.Instance.ShowDamagePopUp(target.transform.position, dmgValue);
         }
 
+        target.TakeDamage(dmgValue);
+
         yield return new WaitForSeconds(0.25f);
 
-        // 3. Dash back to home slot
+        // 3. Return to position
         while (Vector3.Distance(attacker.transform.position, startPos) > 0.05f)
         {
             attacker.transform.position = Vector3.MoveTowards(attacker.transform.position, startPos, flySpeed * Time.deltaTime);
@@ -125,4 +126,4 @@ public class CardSelector : MonoBehaviour
         DeselectCard();
         isAttacking = false;
     }
-}
+}   
