@@ -5,6 +5,7 @@ public class Card : MonoBehaviour
 {
     public CardData data;
     public int ownerId = 0; // 0 = Player, 1 = Enemy
+    public int damage;      // Added field to track active card damage
     public int currentHealth;
     public int currentShield;
 
@@ -13,6 +14,7 @@ public class Card : MonoBehaviour
     public void Apply(CardData newData)
     {
         data = newData;
+        damage = newData.damage; // Pulls damage from CardData (change to newData.attack if your CardData field is named attack)
         currentHealth = newData.maxHealth;
         currentShield = newData.shield;
 
