@@ -77,37 +77,47 @@ public class Draggable : MonoBehaviour
         BeginDrag();
     }
 
-    public void BeginDrag()
+   public void BeginDrag()
+{
+    // Gating check: Only allow dragging during Phase 1 (Setup) and Phase 3 (Recover)
+    if (PhaseManager.Instance != null)
     {
-        if (isDragging) return;
-        Initialize();
-
-        if (currentZone != null)
+        GamePhase phase = PhaseManager.Instance.currentPhase;
+        if (phase != GamePhase.Setup && phase != GamePhase.Recover)
         {
-            currentZone.Vacate(this);
-            currentZone = null;
+            Debug.Log($"[Draggable] Cannot drag cards during {phase} phase!");
+            return;
         }
-
-        isReturning = false;
-        isDragging = true;
-
-        if (autoBeginDrag)
-        {
-            grabOffset = Vector3.zero;
-            autoBeginDrag = false;
-        }
-        else
-        {
-            grabOffset = transform.position - GetMouseWorldPosition();
-        }
-
-        Vector3 pos = transform.position;
-        pos.z = originalZ + zLift;
-        transform.position = pos;
-
-        OnDragStarted?.Invoke(this);
     }
 
+    if (isDragging) return;
+    Initialize();
+
+    if (currentZone != null)
+    {
+        currentZone.Vacate(this);
+        currentZone = null;
+    }
+
+    isReturning = false;
+    isDragging = true;
+
+    if (autoBeginDrag)
+    {
+        grabOffset = Vector3.zero;
+        autoBeginDrag = false;
+    }
+    else
+    {
+        grabOffset = transform.position - GetMouseWorldPosition();
+    }
+
+    Vector3 pos = transform.position;
+    pos.z = originalZ + zLift;
+    transform.position = pos;
+
+    OnDragStarted?.Invoke(this);
+}
     public void EndDrag()
     {
         if (!isDragging) return;
