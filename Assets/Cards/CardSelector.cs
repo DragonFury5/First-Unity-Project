@@ -14,10 +14,7 @@ public class CardSelector : MonoBehaviour
     private Vector3 originalScale;
     private bool isAttacking;
 
-    void Awake()
-    {
-        Instance = this;
-    }
+    void Awake() { Instance = this; }
 
     void Update()
     {
@@ -49,11 +46,11 @@ public class CardSelector : MonoBehaviour
         }
         else if (clickedCard.ownerId == Team.Enemy && selectedCard != null)
         {
+            if (!CanPlayerAttack(selectedCard)) return;
             StartCoroutine(AttackRoutine(selectedCard, clickedCard));
         }
     }
 
-    /// <summary>Closest Card whose collider contains the point, or null.</summary>
     private Card GetCardAtPoint(Vector2 point)
     {
         Collider2D[] hits = Physics2D.OverlapPointAll(point);
@@ -64,7 +61,6 @@ public class CardSelector : MonoBehaviour
 
         for (int i = 0; i < hits.Length; i++)
         {
-            // GetComponentInParent so a child collider still maps back to the Card
             Card c = hits[i].GetComponentInParent<Card>();
             if (c == null) continue;
 
@@ -82,7 +78,8 @@ public class CardSelector : MonoBehaviour
     private void SelectPlayerCard(Card card)
     {
         if (card == null) return;
-        if (selectedCard == card) return;   // Already selected
+        if (card.exhausted) return;       // Cannot select an exhausted card
+        if (selectedCard == card) return; // Already selected
 
         if (selectedCard != null) DeselectCard();
 
@@ -102,45 +99,63 @@ public class CardSelector : MonoBehaviour
         }
     }
 
+    private bool CanPlayerAttack(Card attacker)
+    {
+        if (attacker == null || attacker.exhausted) return false;
+        if (EnergyManager.Instance == null) return true; // Fallback if manager not in scene
+        return EnergyManager.Instance.CanAfford(Team.Player, attacker.Cost);
+    }
+
     private IEnumerator AttackRoutine(Card attacker, Card target)
     {
-        if (attacker == null || target == null)
+        if (attacker == null || target == null) { DeselectCard(); yield break; }
+
+        // Commit the attack: spend energy, exhaust the attacker.
+        int cost = attacker.Cost;
+        if (EnergyManager.Instance != null && !EnergyManager.Instance.TrySpend(Team.Player, cost))
         {
             DeselectCard();
             yield break;
         }
+        attacker.SetExhausted(true);
 
         isAttacking = true;
+        yield return PlayAttackAnimation(attacker, target);
+        DeselectCard();
+        isAttacking = false;
+    }
+
+    /// <summary>Shared dash → damage → return animation. Used by both player and enemy.</summary>
+    public IEnumerator PlayAttackAnimation(Card attacker, Card target)
+    {
+        if (attacker == null || target == null) yield break;
 
         Vector3 startPos = attacker.transform.position;
         Vector3 targetPos = target.transform.position + (Vector3.down * attackOffset);
         targetPos.z = startPos.z - 0.5f;
 
-        // 1. Dash to target
-        while (attacker != null && Vector3.Distance(attacker.transform.position, targetPos) > 0.05f)
+        while (attacker != null &&
+               Vector3.Distance(attacker.transform.position, targetPos) > 0.05f)
         {
             attacker.transform.position = Vector3.MoveTowards(
                 attacker.transform.position, targetPos, flySpeed * Time.deltaTime);
             yield return null;
         }
 
-        if (attacker == null) { DeselectCard(); isAttacking = false; yield break; }
-
+        if (attacker == null) yield break;
         attacker.transform.position = targetPos;
 
-        // 2. Deal damage & popup
         if (target != null)
         {
-            int dmgValue = attacker.damage;
+            int dmg = attacker.damage;
             if (EnemyAI.Instance != null)
-                EnemyAI.Instance.ShowDamagePopUp(target.transform.position, dmgValue);
+                EnemyAI.Instance.ShowDamagePopUp(target.transform.position, dmg);
 
-            target.TakeDamage(dmgValue);
+            target.TakeDamage(dmg);
         }
 
         yield return new WaitForSeconds(0.25f);
 
-        // 3. Return home
         if (attacker != null)
         {
             while (Vector3.Distance(attacker.transform.position, startPos) > 0.05f)
@@ -151,8 +166,5 @@ public class CardSelector : MonoBehaviour
             }
             attacker.transform.position = startPos;
         }
-
-        DeselectCard();
-        isAttacking = false;
     }
 }

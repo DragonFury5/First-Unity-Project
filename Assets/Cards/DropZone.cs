@@ -7,6 +7,10 @@ public class DropZone : MonoBehaviour
     [Tooltip("Width and Height of the drop target in world units.")]
     public Vector2 size = new Vector2(1.5f, 2.2f);
 
+    [Header("Ownership")]
+    [Tooltip("Only cards owned by this team may be placed here. Use Team.Player or Team.Enemy.")]
+    public int ownerTeam = Team.Player;
+
     [Header("Visual Alpha")]
     [Range(0f, 1f)] public float visibleAlpha = 0.4f;
     public float fadeSpeed = 10f;
@@ -18,7 +22,18 @@ public class DropZone : MonoBehaviour
     private float targetAlpha;
 
     public bool IsOccupied => occupant != null;
-    public bool CanAccept(Draggable d) => occupant == null || occupant == d;
+
+    public bool CanAccept(Draggable d)
+    {
+        if (d == null) return false;
+        if (occupant != null && occupant != d) return false;
+
+        Card card = d.GetComponent<Card>();
+        if (card == null) return true; // No Card component → no team constraint
+
+        return card.ownerId == ownerTeam;
+    }
+
     public void Occupy(Draggable d) { occupant = d; }
     public void Vacate(Draggable d) { if (occupant == d) occupant = null; }
 
@@ -40,7 +55,17 @@ public class DropZone : MonoBehaviour
         Draggable.OnDragEnded -= HandleDragEnded;
     }
 
-    void HandleDragStarted(Draggable d) => targetAlpha = visibleAlpha;
+    void HandleDragStarted(Draggable d)
+    {
+        if (d == null) return;
+
+        // Only fade in for draggers that belong to this zone's team.
+        Card card = d.GetComponent<Card>();
+        if (card != null && card.ownerId != ownerTeam) return;
+
+        targetAlpha = visibleAlpha;
+    }
+
     void HandleDragEnded(Draggable d) => targetAlpha = 0f;
 
     void Update()

@@ -3,10 +3,10 @@ using UnityEngine;
 
 public enum GamePhase
 {
-    Setup,    // Phase 1: Draw cards, place onto DropZones
-    Battle,   // Phase 2: Select units and attack targets
-    Recover,  // Phase 3: Play support cards, clear unused hand cards
-    EnemyTurn // Enemy AI / opponent turn
+    Setup,
+    Battle,
+    Recover,
+    EnemyTurn
 }
 
 public class PhaseManager : MonoBehaviour
@@ -20,8 +20,10 @@ public class PhaseManager : MonoBehaviour
     [Header("References")]
     public Deck playerDeck;
 
-    // Events for other scripts to listen to phase changes
     public static event Action<GamePhase> OnPhaseChanged;
+
+    private int setupCount = 0;
+    private int enemyTurnCount = 0;
 
     void Awake()
     {
@@ -35,32 +37,17 @@ public class PhaseManager : MonoBehaviour
 
     void Start()
     {
-        // Start the game in Phase 1 (Setup)
         StartPhase(GamePhase.Setup);
     }
 
-    /// <summary>
-    /// Advances to the next logical phase in sequence.
-    /// </summary>
     public void AdvancePhase()
     {
         switch (currentPhase)
         {
-            case GamePhase.Setup:
-                StartPhase(GamePhase.Battle);
-                break;
-
-            case GamePhase.Battle:
-                StartPhase(GamePhase.Recover);
-                break;
-
-            case GamePhase.Recover:
-                StartPhase(GamePhase.EnemyTurn);
-                break;
-
-            case GamePhase.EnemyTurn:
-                StartPhase(GamePhase.Setup);
-                break;
+            case GamePhase.Setup:     StartPhase(GamePhase.Battle);    break;
+            case GamePhase.Battle:    StartPhase(GamePhase.Recover);   break;
+            case GamePhase.Recover:   StartPhase(GamePhase.EnemyTurn); break;
+            case GamePhase.EnemyTurn: StartPhase(GamePhase.Setup);     break;
         }
     }
 
@@ -73,33 +60,28 @@ public class PhaseManager : MonoBehaviour
 
         switch (currentPhase)
         {
-            case GamePhase.Setup:
-                HandleSetupPhase();
-                break;
-
-            case GamePhase.Battle:
-                HandleBattlePhase();
-                break;
-
-            case GamePhase.Recover:
-                HandleRecoverPhase();
-                break;
-
-            case GamePhase.EnemyTurn:
-                HandleEnemyTurn();
-                break;
+            case GamePhase.Setup:     HandleSetupPhase();     break;
+            case GamePhase.Battle:    HandleBattlePhase();    break;
+            case GamePhase.Recover:   HandleRecoverPhase();   break;
+            case GamePhase.EnemyTurn: HandleEnemyTurn();      break;
         }
     }
 
     private void HandleSetupPhase()
     {
-        // Automatically draw starting cards for Phase 1
+        setupCount++;
+
+        // Refill player energy on every Setup except the very first (starting energy covers that).
+        if (setupCount > 1 && EnergyManager.Instance != null)
+            EnergyManager.Instance.RefillForTeam(Team.Player);
+
+        // Clear player exhaustion at the start of their turn.
+        ClearExhaustForTeam(Team.Player);
+
+        // Auto-draw for the player.
         if (playerDeck != null)
         {
-            for (int i = 0; i < cardsToDrawInSetup; i++)
-            {
-                playerDeck.DrawCard();
-            }
+            for (int i = 0; i < cardsToDrawInSetup; i++) playerDeck.DrawCard();
         }
         else
         {
@@ -109,24 +91,38 @@ public class PhaseManager : MonoBehaviour
 
     private void HandleBattlePhase()
     {
-        // Gating card drawing/placement if necessary, enabling combat input
+        // Player attacks via CardSelector during this phase.
     }
 
     private void HandleRecoverPhase()
     {
-        // Cleanup or support card interactions before ending player turn
+        // Recover applies to BOTH teams equally.
+        Card[] allCards = FindObjectsByType<Card>(FindObjectsSortMode.None);
+        foreach (Card c in allCards)
+        {
+            if (c != null) c.OnRecoverPhase();
+        }
     }
 
     private void HandleEnemyTurn()
     {
-        // Placeholder for AI actions, then automatically return to Setup
-        Debug.Log("[PhaseManager] Enemy turn running...");
-        // For testing: automatically pass enemy turn after 1.5 seconds
-        Invoke(nameof(EndEnemyTurn), 1.5f);
+        enemyTurnCount++;
+
+        if (enemyTurnCount > 1 && EnergyManager.Instance != null)
+            EnergyManager.Instance.RefillForTeam(Team.Enemy);
+
+        ClearExhaustForTeam(Team.Enemy);
+
+        // EnemyAI listens to OnPhaseChanged and runs the actual turn.
+        // It calls PhaseManager.AdvancePhase() when done → back to Setup.
     }
 
-    private void EndEnemyTurn()
+    private void ClearExhaustForTeam(int team)
     {
-        StartPhase(GamePhase.Setup);
+        Card[] allCards = FindObjectsByType<Card>(FindObjectsSortMode.None);
+        foreach (Card c in allCards)
+        {
+            if (c != null && c.ownerId == team) c.SetExhausted(false);
+        }
     }
 }

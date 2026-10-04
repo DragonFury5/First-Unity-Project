@@ -4,7 +4,6 @@ using UnityEngine;
 public class Draggable : MonoBehaviour
 {
     [Header("Scale Settings")]
-    [Tooltip("How much the card grows while selected/dragged.")]
     public float grabScaleMultiplier = 1.15f;
     public float scaleSpeed = 12f;
 
@@ -27,10 +26,7 @@ public class Draggable : MonoBehaviour
     private bool isReturning;
     private bool initialized;
 
-    void Awake()
-    {
-        Initialize();
-    }
+    void Awake() { Initialize(); }
 
     void Start()
     {
@@ -50,7 +46,6 @@ public class Draggable : MonoBehaviour
 
     void Update()
     {
-        // During Battle, CardSelector owns scale. Don't fight it.
         bool isBattlePhase = PhaseManager.Instance != null &&
                              PhaseManager.Instance.currentPhase == GamePhase.Battle;
 
@@ -152,7 +147,13 @@ public class Draggable : MonoBehaviour
         if (PhaseManager.Instance == null) return true;
 
         GamePhase phase = PhaseManager.Instance.currentPhase;
-        return phase == GamePhase.Setup || phase == GamePhase.Recover;
+        if (phase != GamePhase.Setup && phase != GamePhase.Recover) return false;
+
+        // Only the local player may drag their own cards.
+        Card card = GetComponent<Card>();
+        if (card != null && card.ownerId != Team.Player) return false;
+
+        return true;
     }
 
     private DropZone FindContainingZone(Vector3 worldPos)
