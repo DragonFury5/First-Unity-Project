@@ -25,18 +25,11 @@ public class Draggable : MonoBehaviour
     private DropZone currentZone;
     private bool isDragging;
     private bool isReturning;
+    private bool initialized;
 
     void Awake()
     {
         Initialize();
-    }
-
-    public void Initialize()
-    {
-        if (originalScale != Vector3.zero) return;
-        originalScale = transform.localScale;
-        homePosition = transform.position;
-        originalZ = transform.position.z;
     }
 
     void Start()
@@ -45,86 +38,86 @@ public class Draggable : MonoBehaviour
         if (autoBeginDrag) BeginDrag();
     }
 
+    public void Initialize()
+    {
+        if (initialized) return;
+        initialized = true;
+
+        originalScale = transform.localScale;
+        homePosition = transform.position;
+        originalZ = transform.position.z;
+    }
+
     void Update()
-{
-    // Skip Draggable scale control during Battle phase so CardSelector can enlarge/scale the card freely
-    bool isBattlePhase = PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle;
-
-    if (!isBattlePhase)
     {
-        float currentMultiplier = isDragging ? grabScaleMultiplier : 1f;
-        Vector3 targetScale = originalScale * currentMultiplier;
-        transform.localScale = Vector3.Lerp(transform.localScale, targetScale, Time.deltaTime * scaleSpeed);
-    }
+        // During Battle, CardSelector owns scale. Don't fight it.
+        bool isBattlePhase = PhaseManager.Instance != null &&
+                             PhaseManager.Instance.currentPhase == GamePhase.Battle;
 
-    if (isDragging)
-    {
-        transform.position = GetMouseWorldPosition() + grabOffset;
-
-        if (Input.GetMouseButtonUp(0))
+        if (!isBattlePhase)
         {
-            EndDrag();
+            float currentMultiplier = isDragging ? grabScaleMultiplier : 1f;
+            Vector3 targetScale = originalScale * currentMultiplier;
+            transform.localScale = Vector3.Lerp(
+                transform.localScale, targetScale, Time.deltaTime * scaleSpeed);
+        }
+
+        if (isDragging)
+        {
+            transform.position = GetMouseWorldPosition() + grabOffset;
+            if (Input.GetMouseButtonUp(0)) EndDrag();
+        }
+        else if (isReturning)
+        {
+            transform.position = Vector3.Lerp(
+                transform.position, homePosition, Time.deltaTime * returnSpeed);
+
+            if (Vector3.Distance(transform.position, homePosition) < 0.01f)
+            {
+                transform.position = homePosition;
+                isReturning = false;
+            }
         }
     }
-    else if (isReturning)
+
+    void OnMouseDown()
     {
-        transform.position = Vector3.Lerp(transform.position, homePosition, Time.deltaTime * returnSpeed);
-        if (Vector3.Distance(transform.position, homePosition) < 0.01f)
+        if (CanDragInCurrentPhase()) BeginDrag();
+    }
+
+    public void BeginDrag()
+    {
+        if (!CanDragInCurrentPhase()) return;
+        if (isDragging) return;
+
+        Initialize();
+
+        if (currentZone != null)
         {
-            transform.position = homePosition;
-            isReturning = false;
+            currentZone.Vacate(this);
+            currentZone = null;
         }
-    }
-}
 
-   void OnMouseDown()
-{
-    // Only attempt drag if we are in Setup or Recover phases
-    if (CanDragInCurrentPhase())
-    {
-        BeginDrag();
-    }
-}
-    private bool CanDragInCurrentPhase()
-{
-    if (PhaseManager.Instance == null) return true;
+        isReturning = false;
+        isDragging = true;
 
-    GamePhase phase = PhaseManager.Instance.currentPhase;
-    return phase == GamePhase.Setup || phase == GamePhase.Recover;
-}
-   public void BeginDrag()
-{
-    // Gate dragging by phase without spamming warning logs
-    if (!CanDragInCurrentPhase()) return;
+        if (autoBeginDrag)
+        {
+            grabOffset = Vector3.zero;
+            autoBeginDrag = false;
+        }
+        else
+        {
+            grabOffset = transform.position - GetMouseWorldPosition();
+        }
 
-    if (isDragging) return;
-    Initialize();
+        Vector3 pos = transform.position;
+        pos.z = originalZ + zLift;
+        transform.position = pos;
 
-    if (currentZone != null)
-    {
-        currentZone.Vacate(this);
-        currentZone = null;
+        OnDragStarted?.Invoke(this);
     }
 
-    isReturning = false;
-    isDragging = true;
-
-    if (autoBeginDrag)
-    {
-        grabOffset = Vector3.zero;
-        autoBeginDrag = false;
-    }
-    else
-    {
-        grabOffset = transform.position - GetMouseWorldPosition();
-    }
-
-    Vector3 pos = transform.position;
-    pos.z = originalZ + zLift;
-    transform.position = pos;
-
-    OnDragStarted?.Invoke(this);
-}
     public void EndDrag()
     {
         if (!isDragging) return;
@@ -141,7 +134,8 @@ public class Draggable : MonoBehaviour
             currentZone = matched;
             matched.Occupy(this);
 
-            homePosition = new Vector3(matched.transform.position.x, matched.transform.position.y, originalZ);
+            homePosition = new Vector3(
+                matched.transform.position.x, matched.transform.position.y, originalZ);
             transform.position = homePosition;
             isReturning = false;
         }
@@ -153,9 +147,17 @@ public class Draggable : MonoBehaviour
         OnDragEnded?.Invoke(this);
     }
 
+    private bool CanDragInCurrentPhase()
+    {
+        if (PhaseManager.Instance == null) return true;
+
+        GamePhase phase = PhaseManager.Instance.currentPhase;
+        return phase == GamePhase.Setup || phase == GamePhase.Recover;
+    }
+
     private DropZone FindContainingZone(Vector3 worldPos)
     {
-        foreach (var zone in FindObjectsByType<DropZone>())
+        foreach (var zone in FindObjectsByType<DropZone>(FindObjectsSortMode.None))
         {
             if (zone != null && zone.Contains(worldPos) && zone.CanAccept(this))
                 return zone;
@@ -165,6 +167,8 @@ public class Draggable : MonoBehaviour
 
     private Vector3 GetMouseWorldPosition()
     {
+        if (Camera.main == null) return transform.position;
+
         Vector3 mousePos = Input.mousePosition;
         mousePos.z = Mathf.Abs(Camera.main.transform.position.z - transform.position.z);
         return Camera.main.ScreenToWorldPoint(mousePos);

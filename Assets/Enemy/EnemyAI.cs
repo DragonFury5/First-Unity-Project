@@ -30,10 +30,7 @@ public class EnemyAI : MonoBehaviour
 
     private void HandlePhaseChanged(GamePhase newPhase)
     {
-        if (newPhase == GamePhase.Setup)
-        {
-            SpawnEnemyCards();
-        }
+        if (newPhase == GamePhase.Setup) SpawnEnemyCards();
     }
 
     public void SpawnEnemyCards()
@@ -42,28 +39,22 @@ public class EnemyAI : MonoBehaviour
 
         foreach (var zone in enemyDropZones)
         {
-            // Only spawn if the slot is empty
-            if (zone != null && zone.IsOccupied == false)
+            if (zone == null || zone.IsOccupied) continue;
+
+            CardData data = enemyDeckData[Random.Range(0, enemyDeckData.Count)];
+            Vector3 spawnPos = new Vector3(zone.transform.position.x, zone.transform.position.y, 0f);
+
+            GameObject go = Instantiate(cardPrefab, spawnPos, Quaternion.identity);
+
+            Card card = go.GetComponent<Card>();
+            if (card != null)
             {
-                // Choose a random card from enemy deck
-                CardData data = enemyDeckData[Random.Range(0, enemyDeckData.Count)];
-
-                Vector3 spawnPos = new Vector3(zone.transform.position.x, zone.transform.position.y, 0f);
-                GameObject go = Instantiate(cardPrefab, spawnPos, Quaternion.identity);
-
-                Card card = go.GetComponent<Card>();
-                if (card != null)
-                {
-                    card.Apply(data);
-                    card.ownerId = 2; // 1 = Enemy
-                }
-
-                Draggable draggable = go.GetComponent<Draggable>();
-                if (draggable != null)
-                {
-                    zone.Occupy(draggable);
-                }
+                card.Apply(data);
+                card.ownerId = Team.Enemy;
             }
+
+            Draggable draggable = go.GetComponent<Draggable>();
+            if (draggable != null) zone.Occupy(draggable);
         }
     }
 
@@ -73,11 +64,8 @@ public class EnemyAI : MonoBehaviour
 
         Vector3 spawnPos = targetPos + new Vector3(0f, 0.5f, -1f);
         GameObject popUp = Instantiate(damageTextPrefab, spawnPos, Quaternion.identity);
-        
+
         DamageText text = popUp.GetComponent<DamageText>();
-        if (text != null)
-        {
-            text.Setup(damage);
-        }
+        if (text != null) text.Setup(damage);
     }
 }

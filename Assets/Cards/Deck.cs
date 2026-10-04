@@ -3,12 +3,19 @@ using UnityEngine;
 
 public class Deck : MonoBehaviour
 {
-    public int ownerId = 0;
+    [Header("Ownership")]
+    [Tooltip("Team that owns cards drawn from this deck. Use Team.Player / Team.Enemy / Team.Neutral.")]
+    public int ownerId = Team.Player;
+
+    [Header("Cards")]
     public List<CardData> cards = new List<CardData>();
 
     [Header("Spawning")]
     public GameObject cardPrefab;
     public Transform spawnPoint;
+
+    [Header("Debug")]
+    public bool debugLogs = false;
 
     private List<CardData> remaining;
 
@@ -26,18 +33,15 @@ public class Deck : MonoBehaviour
     {
         if (cardPrefab == null)
         {
-            Debug.LogError("Assign CardPrefab to the Deck script on " + gameObject.name, this);
+            Debug.LogError($"[Deck] No cardPrefab assigned on {gameObject.name}.", this);
             return null;
         }
 
-        if (remaining == null || remaining.Count == 0)
-        {
-            ResetDeck();
-        }
+        if (remaining == null || remaining.Count == 0) ResetDeck();
 
         if (remaining == null || remaining.Count == 0)
         {
-            Debug.LogWarning("Deck has no CardData assigned in Inspector!", this);
+            Debug.LogWarning($"[Deck] No CardData assigned on {gameObject.name}.", this);
             return null;
         }
 
@@ -47,34 +51,29 @@ public class Deck : MonoBehaviour
 
         Vector3 pos = spawnPoint != null ? spawnPoint.position : transform.position;
 
-        // DEBUG 1: Print world position of spawn
-        Debug.Log($"[Deck Debug] Spawning card at World Position: {pos}");
-
-        // DEBUG 2: Verify Main Camera reference & viewport bounds
-        if (Camera.main == null)
-        {
-            Debug.LogError("[Deck Debug] NO CAMERA TAGGED AS 'MainCamera' IN SCENE!");
-        }
-        else
-        {
-            Vector3 viewportPos = Camera.main.WorldToViewportPoint(pos);
-            Debug.Log($"[Deck Debug] Viewport Pos: {viewportPos} (Values outside 0 to 1 mean off-screen!)");
-        }
+        if (debugLogs)
+            Debug.Log($"[Deck] Drawing '{picked.cardName}' at {pos} (owner {ownerId}).");
 
         GameObject go = Instantiate(cardPrefab, pos, Quaternion.identity);
 
         Card card = go.GetComponent<Card>();
-        if (card != null)
+        if (card == null)
         {
-            card.Apply(picked);
-            card.ownerId = ownerId;
+            Debug.LogError("[Deck] cardPrefab has no Card component!", this);
+            Destroy(go);
+            return null;
         }
 
+        card.Apply(picked);
+        card.ownerId = ownerId;
         return card;
     }
 
     void OnMouseDown()
     {
+        // Only allow manual draw in Setup / Recover (matches Draggable's phase gate).
+        if (!CanDrawInCurrentPhase()) return;
+
         Card drawn = DrawCard();
         if (drawn == null) return;
 
@@ -84,5 +83,13 @@ public class Deck : MonoBehaviour
             d.autoBeginDrag = true;
             d.BeginDrag();
         }
+    }
+
+    private bool CanDrawInCurrentPhase()
+    {
+        if (PhaseManager.Instance == null) return true;
+
+        GamePhase phase = PhaseManager.Instance.currentPhase;
+        return phase == GamePhase.Setup || phase == GamePhase.Recover;
     }
 }
