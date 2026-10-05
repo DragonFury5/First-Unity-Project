@@ -10,16 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 735765aed9a156b4eaca8665e51ab757, type: 3}
-  m_Name: Knight
+  m_Name: Cavalry
   m_EditorClassIdentifier: Assembly-CSharp::CardData
-  cardName: Knight
+  cardName: Cavalry
   type: 0
   sprite: {fileID: -1767107552088470712, guid: 7775b609a537a504fa39304ab3c7d47f, type: 3}
   tint: {r: 1, g: 1, b: 1, a: 1}
-  maxHealth: 10
-  damage: 2
+  maxHealth: 5
+  damage: 5
   shield: 0
-  cost: 1
-  description: 'A Great Knight of the County
-
-'
+  cost: 3
+  description: 

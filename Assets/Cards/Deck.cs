@@ -64,6 +64,11 @@ public class Deck : MonoBehaviour
         }
 
         card.Apply(picked);
+        if (targetHand != null && !targetHand.AddCard(card))
+{
+    Destroy(go);
+    return null;
+}
         card.ownerId = ownerId;
 
         if (targetHand != null && !targetHand.AddCard(card))

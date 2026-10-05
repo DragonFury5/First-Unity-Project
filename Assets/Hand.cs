@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class Hand : MonoBehaviour
 {
-    [Header("Slots (assign 5 in the Inspector, in left-to-right order)")]
     public List<HandSlot> slots = new List<HandSlot>();
 
     public int Capacity => slots.Count;
@@ -25,7 +24,6 @@ public class Hand : MonoBehaviour
         return null;
     }
 
-    /// <summary>Places a card into the first free slot. Returns false if the hand is full.</summary>
     public bool AddCard(Card card)
     {
         if (card == null) return false;
@@ -42,13 +40,11 @@ public class Hand : MonoBehaviour
         return true;
     }
 
-    /// <summary>Destroys every card still in hand and frees the slots. Called at the start of Setup.</summary>
     public void ClearAndDiscard()
     {
         foreach (var slot in slots)
         {
             if (slot == null || slot.occupant == null) continue;
-
             GameObject go = slot.occupant.gameObject;
             slot.Vacate(slot.occupant);
             if (go != null) Destroy(go);
