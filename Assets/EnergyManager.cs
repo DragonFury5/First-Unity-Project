@@ -1,22 +1,16 @@
+using System;
 using UnityEngine;
 
 [System.Serializable]
 public class EnergyPool
 {
-    [Tooltip("Current usable energy.")]
     public int current;
 
     [Header("Progression")]
-    [Tooltip("Energy available on the very first turn of this pool's owner.")]
     public int startingEnergy = 3;
-
-    [Tooltip("Extra energy granted at the start of each subsequent turn.")]
     public int regenPerTurn = 1;
-
-    [Tooltip("Hard cap on energy.")]
     public int cap = 10;
 
-    // Internal: how many refills this pool has received.
     [HideInInspector] public int turnCount = 0;
 
     public void Initialize()
@@ -41,6 +35,11 @@ public class EnergyPool
         current -= cost;
         return true;
     }
+
+    public int NextTurnTarget()
+    {
+        return Mathf.Min(startingEnergy + (turnCount + 1) * regenPerTurn, cap);
+    }
 }
 
 public class EnergyManager : MonoBehaviour
@@ -50,6 +49,9 @@ public class EnergyManager : MonoBehaviour
     [Header("Pools")]
     public EnergyPool playerEnergy = new EnergyPool();
     public EnergyPool enemyEnergy  = new EnergyPool();
+
+    /// <summary>Fired whenever a pool changes (spend or refill). Passes the affected team.</summary>
+    public static event Action<int> OnEnergyChanged;
 
     void Awake()
     {
@@ -74,7 +76,9 @@ public class EnergyManager : MonoBehaviour
     public void RefillForTeam(int team)
     {
         EnergyPool p = GetPool(team);
-        if (p != null) p.Refill();
+        if (p == null) return;
+        p.Refill();
+        OnEnergyChanged?.Invoke(team);
     }
 
     public bool CanAfford(int team, int cost)
@@ -86,6 +90,8 @@ public class EnergyManager : MonoBehaviour
     public bool TrySpend(int team, int cost)
     {
         EnergyPool p = GetPool(team);
-        return p != null && p.Spend(cost);
+        if (p == null || !p.Spend(cost)) return false;
+        OnEnergyChanged?.Invoke(team);
+        return true;
     }
 }

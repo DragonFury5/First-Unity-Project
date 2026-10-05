@@ -94,7 +94,7 @@ public class EnemyAI : MonoBehaviour
 
     private Card FindFirstReadyEnemy()
     {
-        Card[] all = FindObjectsByType<Card>(FindObjectsSortMode.None);
+        Card[] all = FindObjectsByType<Card>(FindObjectsInactive.Exclude);
         foreach (Card c in all)
         {
             if (c != null && c.ownerId == Team.Enemy && !c.exhausted && !c.IsDead)
@@ -105,7 +105,7 @@ public class EnemyAI : MonoBehaviour
 
     private Card FindLowestHpPlayerCard()
     {
-        Card[] all = FindObjectsByType<Card>(FindObjectsSortMode.None);
+        Card[] all = FindObjectsByType<Card>(FindObjectsInactive.Exclude);
         Card best = null;
         int bestHp = int.MaxValue;
 

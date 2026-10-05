@@ -22,6 +22,8 @@ public class Draggable : MonoBehaviour
     private float originalZ;
 
     private DropZone currentZone;
+    private HandSlot currentHandSlot;
+
     private bool isDragging;
     private bool isReturning;
     private bool initialized;
@@ -42,6 +44,14 @@ public class Draggable : MonoBehaviour
         originalScale = transform.localScale;
         homePosition = transform.position;
         originalZ = transform.position.z;
+    }
+
+    /// <summary>Called by Hand.AddCard to bind this draggable to a hand slot.</summary>
+    public void SetHome(Vector3 newHome, HandSlot handSlot)
+    {
+        homePosition = new Vector3(newHome.x, newHome.y, originalZ);
+        currentHandSlot = handSlot;
+        currentZone = null;
     }
 
     void Update()
@@ -87,11 +97,8 @@ public class Draggable : MonoBehaviour
 
         Initialize();
 
-        if (currentZone != null)
-        {
-            currentZone.Vacate(this);
-            currentZone = null;
-        }
+        // NOTE: we deliberately do NOT vacate currentZone / currentHandSlot here.
+        // If the drop fails, the card needs to return to the same slot.
 
         isReturning = false;
         isDragging = true;
@@ -122,20 +129,29 @@ public class Draggable : MonoBehaviour
         pos.z = originalZ;
         transform.position = pos;
 
-        DropZone matched = FindContainingZone(transform.position);
+        DropZone matchedZone = FindContainingZone(transform.position);
 
-        if (matched != null)
+        if (matchedZone != null)
         {
-            currentZone = matched;
-            matched.Occupy(this);
+            if (matchedZone != currentZone)
+            {
+                // Moving to a new slot — vacate the old home.
+                if (currentZone != null) currentZone.Vacate(this);
+                if (currentHandSlot != null) currentHandSlot.Vacate(this);
+
+                currentHandSlot = null;
+                currentZone = matchedZone;
+                matchedZone.Occupy(this);
+            }
 
             homePosition = new Vector3(
-                matched.transform.position.x, matched.transform.position.y, originalZ);
+                matchedZone.transform.position.x, matchedZone.transform.position.y, originalZ);
             transform.position = homePosition;
             isReturning = false;
         }
         else
         {
+            // No valid battlefield zone — return to wherever we came from (hand or prior zone).
             isReturning = true;
         }
 
@@ -149,7 +165,6 @@ public class Draggable : MonoBehaviour
         GamePhase phase = PhaseManager.Instance.currentPhase;
         if (phase != GamePhase.Setup && phase != GamePhase.Recover) return false;
 
-        // Only the local player may drag their own cards.
         Card card = GetComponent<Card>();
         if (card != null && card.ownerId != Team.Player) return false;
 
@@ -158,7 +173,7 @@ public class Draggable : MonoBehaviour
 
     private DropZone FindContainingZone(Vector3 worldPos)
     {
-        foreach (var zone in FindObjectsByType<DropZone>(FindObjectsSortMode.None))
+        foreach (var zone in FindObjectsByType<DropZone>(FindObjectsInactive.Exclude))
         {
             if (zone != null && zone.Contains(worldPos) && zone.CanAccept(this))
                 return zone;

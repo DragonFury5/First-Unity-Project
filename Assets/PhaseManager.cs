@@ -19,6 +19,7 @@ public class PhaseManager : MonoBehaviour
 
     [Header("References")]
     public Deck playerDeck;
+    public Hand playerHand;
 
     public static event Action<GamePhase> OnPhaseChanged;
 
@@ -27,18 +28,11 @@ public class PhaseManager : MonoBehaviour
 
     void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
     }
 
-    void Start()
-    {
-        StartPhase(GamePhase.Setup);
-    }
+    void Start() { StartPhase(GamePhase.Setup); }
 
     public void AdvancePhase()
     {
@@ -71,14 +65,15 @@ public class PhaseManager : MonoBehaviour
     {
         setupCount++;
 
-        // Refill player energy on every Setup except the very first (starting energy covers that).
         if (setupCount > 1 && EnergyManager.Instance != null)
             EnergyManager.Instance.RefillForTeam(Team.Player);
 
-        // Clear player exhaustion at the start of their turn.
         ClearExhaustForTeam(Team.Player);
 
-        // Auto-draw for the player.
+        // Per your rule: at the start of Setup, discard whatever is left in hand,
+        // then draw a fresh set. The hand is "replaced" every round.
+        if (playerHand != null) playerHand.ClearAndDiscard();
+
         if (playerDeck != null)
         {
             for (int i = 0; i < cardsToDrawInSetup; i++) playerDeck.DrawCard();
@@ -89,19 +84,12 @@ public class PhaseManager : MonoBehaviour
         }
     }
 
-    private void HandleBattlePhase()
-    {
-        // Player attacks via CardSelector during this phase.
-    }
+    private void HandleBattlePhase() { }
 
     private void HandleRecoverPhase()
     {
-        // Recover applies to BOTH teams equally.
-        Card[] allCards = FindObjectsByType<Card>(FindObjectsSortMode.None);
-        foreach (Card c in allCards)
-        {
-            if (c != null) c.OnRecoverPhase();
-        }
+        Card[] all = FindObjectsByType<Card>(FindObjectsInactive.Exclude);
+        foreach (Card c in all) if (c != null) c.OnRecoverPhase();
     }
 
     private void HandleEnemyTurn()
@@ -112,17 +100,12 @@ public class PhaseManager : MonoBehaviour
             EnergyManager.Instance.RefillForTeam(Team.Enemy);
 
         ClearExhaustForTeam(Team.Enemy);
-
-        // EnemyAI listens to OnPhaseChanged and runs the actual turn.
-        // It calls PhaseManager.AdvancePhase() when done → back to Setup.
     }
 
     private void ClearExhaustForTeam(int team)
     {
-        Card[] allCards = FindObjectsByType<Card>(FindObjectsSortMode.None);
-        foreach (Card c in allCards)
-        {
+        Card[] all = FindObjectsByType<Card>(FindObjectsInactive.Exclude);
+        foreach (Card c in all)
             if (c != null && c.ownerId == team) c.SetExhausted(false);
-        }
     }
 }

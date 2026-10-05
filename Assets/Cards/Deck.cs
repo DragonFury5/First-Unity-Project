@@ -4,25 +4,25 @@ using UnityEngine;
 public class Deck : MonoBehaviour
 {
     [Header("Ownership")]
-    [Tooltip("Team that owns cards drawn from this deck. Use Team.Player / Team.Enemy / Team.Neutral.")]
     public int ownerId = Team.Player;
 
-    [Header("Cards")]
+    [Header("Cards (drag CardData assets here)")]
     public List<CardData> cards = new List<CardData>();
 
     [Header("Spawning")]
     public GameObject cardPrefab;
     public Transform spawnPoint;
 
+    [Header("Hand Routing (optional)")]
+    [Tooltip("If set, drawn cards are auto-placed into this hand's first empty slot.")]
+    public Hand targetHand;
+
     [Header("Debug")]
     public bool debugLogs = false;
 
     private List<CardData> remaining;
 
-    void Start()
-    {
-        ResetDeck();
-    }
+    void Start() { ResetDeck(); }
 
     public void ResetDeck()
     {
@@ -55,7 +55,6 @@ public class Deck : MonoBehaviour
             Debug.Log($"[Deck] Drawing '{picked.cardName}' at {pos} (owner {ownerId}).");
 
         GameObject go = Instantiate(cardPrefab, pos, Quaternion.identity);
-
         Card card = go.GetComponent<Card>();
         if (card == null)
         {
@@ -66,30 +65,15 @@ public class Deck : MonoBehaviour
 
         card.Apply(picked);
         card.ownerId = ownerId;
-        return card;
-    }
 
-    void OnMouseDown()
-    {
-        // Only allow manual draw in Setup / Recover (matches Draggable's phase gate).
-        if (!CanDrawInCurrentPhase()) return;
-
-        Card drawn = DrawCard();
-        if (drawn == null) return;
-
-        Draggable d = drawn.GetComponent<Draggable>();
-        if (d != null)
+        if (targetHand != null && !targetHand.AddCard(card))
         {
-            d.autoBeginDrag = true;
-            d.BeginDrag();
+            // Hand full — burn the draw (destroy it). Change this if you want different behavior.
+            if (debugLogs) Debug.Log("[Deck] Hand full — draw burned.");
+            Destroy(go);
+            return null;
         }
-    }
 
-    private bool CanDrawInCurrentPhase()
-    {
-        if (PhaseManager.Instance == null) return true;
-
-        GamePhase phase = PhaseManager.Instance.currentPhase;
-        return phase == GamePhase.Setup || phase == GamePhase.Recover;
+        return card;
     }
 }
