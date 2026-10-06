@@ -14,7 +14,6 @@ public class Deck : MonoBehaviour
     public Transform spawnPoint;
 
     [Header("Hand Routing (optional)")]
-    [Tooltip("If set, drawn cards are auto-placed into this hand's first empty slot.")]
     public Hand targetHand;
 
     [Header("Debug")]
@@ -26,7 +25,18 @@ public class Deck : MonoBehaviour
 
     public void ResetDeck()
     {
-        remaining = new List<CardData>(cards);
+        remaining = new List<CardData>();
+
+        // Filter out any null/invalid entries so DrawCard can trust the list.
+        foreach (var c in cards)
+        {
+            if (c == null)
+            {
+                Debug.LogWarning($"[Deck] Null entry in cards list on {gameObject.name}. Skipping.", this);
+                continue;
+            }
+            remaining.Add(c);
+        }
     }
 
     public Card DrawCard()
@@ -41,13 +51,20 @@ public class Deck : MonoBehaviour
 
         if (remaining == null || remaining.Count == 0)
         {
-            Debug.LogWarning($"[Deck] No CardData assigned on {gameObject.name}.", this);
+            Debug.LogWarning($"[Deck] No valid CardData in deck on {gameObject.name}.", this);
             return null;
         }
 
         int index = Random.Range(0, remaining.Count);
         CardData picked = remaining[index];
         remaining.RemoveAt(index);
+
+        if (picked == null)
+        {
+            // Belt and suspenders — should never happen after ResetDeck filtering.
+            Debug.LogWarning("[Deck] Picked a null CardData. Skipping this draw.", this);
+            return null;
+        }
 
         Vector3 pos = spawnPoint != null ? spawnPoint.position : transform.position;
 
@@ -64,21 +81,25 @@ public class Deck : MonoBehaviour
         }
 
         card.Apply(picked);
-        if (targetHand != null && !targetHand.AddCard(card))
-{
-    Destroy(go);
-    return null;
-}
         card.ownerId = ownerId;
 
         if (targetHand != null && !targetHand.AddCard(card))
         {
-            // Hand full — burn the draw (destroy it). Change this if you want different behavior.
             if (debugLogs) Debug.Log("[Deck] Hand full — draw burned.");
             Destroy(go);
             return null;
         }
 
         return card;
+    }
+
+    // Warn in the Inspector if the list has blanks, so you catch it before playing.
+    void OnValidate()
+    {
+        for (int i = 0; i < cards.Count; i++)
+        {
+            if (cards[i] == null)
+                Debug.LogWarning($"[Deck] Empty slot at index {i} in Cards list on {gameObject.name}.", this);
+        }
     }
 }
