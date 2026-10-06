@@ -16,6 +16,9 @@ public class Draggable : MonoBehaviour
     public static event System.Action<Draggable> OnDragStarted;
     public static event System.Action<Draggable> OnDragEnded;
 
+    /// <summary>True if this card is currently sitting in a Hand slot.</summary>
+    public bool IsInHand => currentHandSlot != null;
+
     private Vector3 originalScale;
     private Vector3 homePosition;
     private Vector3 grabOffset;
@@ -120,19 +123,60 @@ public class Draggable : MonoBehaviour
         pos.z = originalZ;
         transform.position = pos;
 
+        // 1) Discard zone — destroys the card.
+        //    If the card was on the battlefield (paid for), refund half its cost (rounded up).
+        DiscardZone discard = FindContainingDiscardZone(transform.position);
+        if (discard != null)
+        {
+            bool wasOnBattlefield = (currentHandSlot == null && currentZone != null);
+
+            if (wasOnBattlefield)
+            {
+                Card card = GetComponent<Card>();
+                if (card != null && card.ownerId == Team.Player && EnergyManager.Instance != null)
+                {
+                    int refund = Mathf.CeilToInt(card.Cost / 2f);
+                    EnergyManager.Instance.Refund(Team.Player, refund);
+                }
+            }
+
+            if (currentHandSlot != null) currentHandSlot.Vacate(this);
+            if (currentZone != null) currentZone.Vacate(this);
+            OnDragEnded?.Invoke(this);
+            Destroy(gameObject);
+            return;
+        }
+
+        // 2) Battlefield zone.
         DropZone matchedZone = FindContainingZone(transform.position);
 
         if (matchedZone != null)
         {
-            if (matchedZone != currentZone)
-            {
-                if (currentZone != null) currentZone.Vacate(this);
-                if (currentHandSlot != null) currentHandSlot.Vacate(this);
+            bool movingFromHand = (currentHandSlot != null);
 
-                currentHandSlot = null;
-                currentZone = matchedZone;
-                matchedZone.Occupy(this);
+            // Coming from hand → charge energy.
+            if (movingFromHand)
+            {
+                Card card = GetComponent<Card>();
+                if (card != null && EnergyManager.Instance != null)
+                {
+                    if (!EnergyManager.Instance.TrySpend(Team.Player, card.Cost))
+                    {
+                        // Not enough energy — bounce back to hand.
+                        isReturning = true;
+                        OnDragEnded?.Invoke(this);
+                        return;
+                    }
+                }
             }
+
+            // Vacate old position.
+            if (currentZone != null && currentZone != matchedZone) currentZone.Vacate(this);
+            if (currentHandSlot != null) currentHandSlot.Vacate(this);
+
+            currentHandSlot = null;
+            currentZone = matchedZone;
+            matchedZone.Occupy(this);
 
             homePosition = new Vector3(matchedZone.transform.position.x,
                                        matchedZone.transform.position.y,
@@ -142,6 +186,7 @@ public class Draggable : MonoBehaviour
         }
         else
         {
+            // No valid target — return to where it came from.
             isReturning = true;
         }
 
@@ -165,6 +210,15 @@ public class Draggable : MonoBehaviour
         {
             if (zone != null && zone.Contains(worldPos) && zone.CanAccept(this))
                 return zone;
+        }
+        return null;
+    }
+
+    private DiscardZone FindContainingDiscardZone(Vector3 worldPos)
+    {
+        foreach (var dz in FindObjectsByType<DiscardZone>(FindObjectsInactive.Exclude))
+        {
+            if (dz != null && dz.Contains(worldPos)) return dz;
         }
         return null;
     }

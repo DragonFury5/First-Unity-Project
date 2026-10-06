@@ -34,11 +34,7 @@ public class CardSelector : MonoBehaviour
 
         Card clickedCard = GetCardAtPoint(mousePos2D);
 
-        if (clickedCard == null)
-        {
-            DeselectCard();
-            return;
-        }
+        if (clickedCard == null) { DeselectCard(); return; }
 
         if (clickedCard.ownerId == Team.Player)
         {
@@ -78,8 +74,13 @@ public class CardSelector : MonoBehaviour
     private void SelectPlayerCard(Card card)
     {
         if (card == null) return;
-        if (card.exhausted) return;       // Cannot select an exhausted card
-        if (selectedCard == card) return; // Already selected
+        if (card.exhausted) return;
+
+        // Cannot select cards sitting in hand.
+        Draggable d = card.GetComponent<Draggable>();
+        if (d != null && d.IsInHand) return;
+
+        if (selectedCard == card) return;
 
         if (selectedCard != null) DeselectCard();
 
@@ -102,7 +103,7 @@ public class CardSelector : MonoBehaviour
     private bool CanPlayerAttack(Card attacker)
     {
         if (attacker == null || attacker.exhausted) return false;
-        if (EnergyManager.Instance == null) return true; // Fallback if manager not in scene
+        if (EnergyManager.Instance == null) return true;
         return EnergyManager.Instance.CanAfford(Team.Player, attacker.Cost);
     }
 
@@ -110,7 +111,6 @@ public class CardSelector : MonoBehaviour
     {
         if (attacker == null || target == null) { DeselectCard(); yield break; }
 
-        // Commit the attack: spend energy, exhaust the attacker.
         int cost = attacker.Cost;
         if (EnergyManager.Instance != null && !EnergyManager.Instance.TrySpend(Team.Player, cost))
         {
@@ -125,7 +125,6 @@ public class CardSelector : MonoBehaviour
         isAttacking = false;
     }
 
-    /// <summary>Shared dash → damage → return animation. Used by both player and enemy.</summary>
     public IEnumerator PlayAttackAnimation(Card attacker, Card target)
     {
         if (attacker == null || target == null) yield break;

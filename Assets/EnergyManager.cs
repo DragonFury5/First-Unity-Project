@@ -7,9 +7,9 @@ public class EnergyPool
     public int current;
 
     [Header("Progression")]
-    public int startingEnergy = 3;
-    public int regenPerTurn = 1;
-    public int cap = 10;
+    public int startingEnergy = 10;
+    public int regenPerTurn = 2;
+    public int cap = 30;
 
     [HideInInspector] public int turnCount = 0;
 
@@ -50,18 +50,13 @@ public class EnergyManager : MonoBehaviour
     public EnergyPool playerEnergy = new EnergyPool();
     public EnergyPool enemyEnergy  = new EnergyPool();
 
-    /// <summary>Fired whenever a pool changes (spend or refill). Passes the affected team.</summary>
+    /// <summary>Fired whenever a pool changes (spend, refund, refill). Passes the affected team.</summary>
     public static event Action<int> OnEnergyChanged;
 
     void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
-
         playerEnergy.Initialize();
         enemyEnergy.Initialize();
     }
@@ -93,5 +88,15 @@ public class EnergyManager : MonoBehaviour
         if (p == null || !p.Spend(cost)) return false;
         OnEnergyChanged?.Invoke(team);
         return true;
+    }
+
+    /// <summary>Adds energy back (e.g. discarding a battlefield card). Clamped at cap.</summary>
+    public void Refund(int team, int amount)
+    {
+        if (amount <= 0) return;
+        EnergyPool p = GetPool(team);
+        if (p == null) return;
+        p.current = Mathf.Min(p.current + amount, p.cap);
+        OnEnergyChanged?.Invoke(team);
     }
 }
