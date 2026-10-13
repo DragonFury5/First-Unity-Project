@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 735765aed9a156b4eaca8665e51ab757, type: 3}
   m_Name: Goblin
   m_EditorClassIdentifier: Assembly-CSharp::CardData
-  cardName: New Card
+  cardName: Goblin
   type: 0
-  sprite: {fileID: 0}
+  sprite: {fileID: 8083194656293017254, guid: 7775b609a537a504fa39304ab3c7d47f, type: 3}
   tint: {r: 1, g: 1, b: 1, a: 1}
-  maxHealth: 10
+  maxHealth: 4
   damage: 2
   shield: 0
   cost: 1

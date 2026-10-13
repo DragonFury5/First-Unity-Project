@@ -1,25 +1,35 @@
 using UnityEngine;
 
-[RequireComponent(typeof(SpriteRenderer))]
 public class DropZone : MonoBehaviour
 {
     [Header("Slot Bounds")]
-    [Tooltip("Width and Height of the drop target in world units.")]
+    [Tooltip("Width and Height of the drop target in world units. Should match your card size (slightly larger).")]
     public Vector2 size = new Vector2(1.5f, 2.2f);
 
     [Header("Ownership")]
-    [Tooltip("Only cards owned by this team may be placed here. Use Team.Player or Team.Enemy.")]
+    [Tooltip("Only cards owned by this team may be placed here.")]
     public int ownerTeam = Team.Player;
 
-    [Header("Visual Alpha")]
-    [Range(0f, 1f)] public float visibleAlpha = 0.4f;
+    [Header("Renderers (children)")]
+    [Tooltip("Hollow border sprite. Always visible.")]
+    public SpriteRenderer outlineRenderer;
+
+    [Tooltip("Solid fill sprite. Fades in only during a matching drag.")]
+    public SpriteRenderer fillRenderer;
+
+    [Header("Alpha")]
+    [Range(0f, 1f)] public float outlineAlpha = 0.5f;
+    [Range(0f, 1f)] public float fillAlpha = 0.25f;
     public float fadeSpeed = 10f;
+
+    [Header("Colors")]
+    public Color outlineColor = new Color(1f, 1f, 1f, 1f);
+    public Color fillColor = new Color(1f, 1f, 1f, 1f);
 
     [Header("Occupancy")]
     [HideInInspector] public Draggable occupant;
 
-    private SpriteRenderer sr;
-    private float targetAlpha;
+    private float currentFillAlpha;
 
     public bool IsOccupied => occupant != null;
 
@@ -29,8 +39,7 @@ public class DropZone : MonoBehaviour
         if (occupant != null && occupant != d) return false;
 
         Card card = d.GetComponent<Card>();
-        if (card == null) return true; // No Card component → no team constraint
-
+        if (card == null) return true;
         return card.ownerId == ownerTeam;
     }
 
@@ -39,8 +48,9 @@ public class DropZone : MonoBehaviour
 
     void Awake()
     {
-        sr = GetComponent<SpriteRenderer>();
-        SetAlpha(0f);
+        currentFillAlpha = 0f;
+        ApplyOutlineColor();
+        ApplyFillAlpha(0f);
     }
 
     void OnEnable()
@@ -59,27 +69,49 @@ public class DropZone : MonoBehaviour
     {
         if (d == null) return;
 
-        // Only fade in for draggers that belong to this zone's team.
+        // Only brighten for draggers that belong to this zone's team.
         Card card = d.GetComponent<Card>();
         if (card != null && card.ownerId != ownerTeam) return;
 
-        targetAlpha = visibleAlpha;
+        // Lerp target — handled in Update.
     }
 
-    void HandleDragEnded(Draggable d) => targetAlpha = 0f;
+    void HandleDragEnded(Draggable d)
+    {
+        // Lerp target — handled in Update.
+    }
 
     void Update()
     {
-        Color c = sr.color;
-        c.a = Mathf.Lerp(c.a, targetAlpha, Time.deltaTime * fadeSpeed);
-        sr.color = c;
+        bool dragging = IsMatchingDragActive();
+        float target = dragging ? fillAlpha : 0f;
+
+        currentFillAlpha = Mathf.Lerp(currentFillAlpha, target, Time.deltaTime * fadeSpeed);
+        ApplyFillAlpha(currentFillAlpha);
     }
 
-    void SetAlpha(float a)
+    private bool IsMatchingDragActive()
     {
-        Color c = sr.color;
+        // Fallback: scan for any active drag from the matching team.
+        // Simpler and stateless; fine for a handful of zones.
+        // Hooked via events would be faster, but requires tracking per-zone state.
+        return DragState.AnyMatchingDragActive(ownerTeam);
+    }
+
+    private void ApplyFillAlpha(float a)
+    {
+        if (fillRenderer == null) return;
+        Color c = fillColor;
         c.a = a;
-        sr.color = c;
+        fillRenderer.color = c;
+    }
+
+    private void ApplyOutlineColor()
+    {
+        if (outlineRenderer == null) return;
+        Color c = outlineColor;
+        c.a = outlineAlpha;
+        outlineRenderer.color = c;
     }
 
     public bool Contains(Vector2 point)
@@ -101,17 +133,16 @@ public class DropZone : MonoBehaviour
 
     void OnValidate()
     {
-        if (TryGetComponent(out SpriteRenderer rend) && rend.sprite != null)
-        {
-            Vector2 spriteBounds = rend.sprite.bounds.size;
-            if (spriteBounds.x > 0f && spriteBounds.y > 0f)
-            {
-                transform.localScale = new Vector3(
-                    size.x / spriteBounds.x,
-                    size.y / spriteBounds.y,
-                    1f
-                );
-            }
-        }
+        ScaleRendererToSize(outlineRenderer);
+        ScaleRendererToSize(fillRenderer);
+        ApplyOutlineColor();
+    }
+
+    private void ScaleRendererToSize(SpriteRenderer rend)
+    {
+        if (rend == null || rend.sprite == null) return;
+        Vector2 b = rend.sprite.bounds.size;
+        if (b.x <= 0f || b.y <= 0f) return;
+        rend.transform.localScale = new Vector3(size.x / b.x, size.y / b.y, 1f);
     }
 }

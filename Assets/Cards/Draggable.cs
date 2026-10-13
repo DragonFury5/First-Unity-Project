@@ -112,6 +112,7 @@ public class Draggable : MonoBehaviour
         transform.position = pos;
 
         OnDragStarted?.Invoke(this);
+        DragState.Add(this);
     }
 
     public void EndDrag()
@@ -145,6 +146,8 @@ public class Draggable : MonoBehaviour
             OnDragEnded?.Invoke(this);
             Destroy(gameObject);
             return;
+
+            DragState.Remove(this); 
         }
 
         // 2) Battlefield zone.

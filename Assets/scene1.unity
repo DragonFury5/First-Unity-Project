@@ -128,6 +128,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 87119141}
+  - component: {fileID: 87119142}
   m_Layer: 0
   m_Name: HandSlot_1
   m_TagString: Untagged
@@ -150,6 +151,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 947430581}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &87119142
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 87119140}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56c338d8191d06549a899b5e24641e39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HandSlot
+  anchor: {fileID: 0}
+  occupant: {fileID: 0}
 --- !u!1 &97919481
 GameObject:
   m_ObjectHideFlags: 0
@@ -370,10 +385,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI
   cardPrefab: {fileID: 4614946703212768843, guid: 407827a473468f64aba031d5a8d0e91b, type: 3}
   enemyDeckData:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 11400000, guid: f26898db5b7b75d4aad56c17fd480f29, type: 2}
+  - {fileID: 11400000, guid: f26898db5b7b75d4aad56c17fd480f29, type: 2}
+  - {fileID: 11400000, guid: f26898db5b7b75d4aad56c17fd480f29, type: 2}
+  - {fileID: 11400000, guid: f26898db5b7b75d4aad56c17fd480f29, type: 2}
   enemyDropZones:
   - {fileID: 1524797674}
   - {fileID: 97919482}
@@ -727,9 +742,10 @@ MonoBehaviour:
   cards:
   - {fileID: 11400000, guid: efe098c7023095647ae6291bd70be737, type: 2}
   - {fileID: 11400000, guid: c96f92d4983b28d4ea86674bc0eccbb3, type: 2}
+  - {fileID: 11400000, guid: c3adf8745bcf33348be5c5b594683393, type: 2}
   cardPrefab: {fileID: 4614946703212768843, guid: 407827a473468f64aba031d5a8d0e91b, type: 3}
   spawnPoint: {fileID: 691940490}
-  targetHand: {fileID: 0}
+  targetHand: {fileID: 947430582}
   debugLogs: 0
 --- !u!212 &639073781
 SpriteRenderer:
@@ -800,8 +816,8 @@ Transform:
   m_GameObject: {fileID: 639073779}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -9.59, y: -6.61, z: 0}
-  m_LocalScale: {x: 2.9360857, y: 4.01426, z: 1}
+  m_LocalPosition: {x: -9.9369, y: -7.0299, z: 0}
+  m_LocalScale: {x: 2.2422886, y: 3.1744766, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 691940490}
@@ -917,7 +933,7 @@ MonoBehaviour:
   currentPhase: 0
   cardsToDrawInSetup: 3
   playerDeck: {fileID: 639073780}
-  playerHand: {fileID: 0}
+  playerHand: {fileID: 947430582}
 --- !u!4 &693791632
 Transform:
   m_ObjectHideFlags: 0
@@ -947,9 +963,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnergyManager
   playerEnergy:
     current: 0
-    startingEnergy: 3
-    regenPerTurn: 1
-    cap: 10
+    startingEnergy: 10
+    regenPerTurn: 3
+    cap: 30
     turnCount: 0
   enemyEnergy:
     current: 0
@@ -1213,6 +1229,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 772356909}
+  - component: {fileID: 772356910}
   m_Layer: 0
   m_Name: HandSlot_4
   m_TagString: Untagged
@@ -1229,12 +1246,26 @@ Transform:
   m_GameObject: {fileID: 772356908}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 17.06, y: -4.56, z: 0}
+  m_LocalPosition: {x: 15.43, y: -4.17, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 947430581}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &772356910
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 772356908}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56c338d8191d06549a899b5e24641e39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HandSlot
+  anchor: {fileID: 0}
+  occupant: {fileID: 0}
 --- !u!1 &785222684
 GameObject:
   m_ObjectHideFlags: 0
@@ -1506,6 +1537,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 947430581}
+  - component: {fileID: 947430582}
   m_Layer: 0
   m_Name: PlayerHand
   m_TagString: Untagged
@@ -1522,7 +1554,7 @@ Transform:
   m_GameObject: {fileID: 947430580}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -10.5764, y: -2.57024, z: 0}
+  m_LocalPosition: {x: -10.54, y: -2.57024, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1533,6 +1565,24 @@ Transform:
   - {fileID: 772356909}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &947430582
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 947430580}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 060324a55857145428a4f5b7bce9729c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hand
+  slots:
+  - {fileID: 1644617463}
+  - {fileID: 87119142}
+  - {fileID: 2014380952}
+  - {fileID: 1044794256}
+  - {fileID: 772356910}
 --- !u!1 &1044794254
 GameObject:
   m_ObjectHideFlags: 0
@@ -1542,6 +1592,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1044794255}
+  - component: {fileID: 1044794256}
   m_Layer: 0
   m_Name: HandSlot_3
   m_TagString: Untagged
@@ -1558,12 +1609,26 @@ Transform:
   m_GameObject: {fileID: 1044794254}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 13.95, y: -4.36, z: 0}
+  m_LocalPosition: {x: 12.44, y: -4.32, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 947430581}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1044794256
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1044794254}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56c338d8191d06549a899b5e24641e39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HandSlot
+  anchor: {fileID: 0}
+  occupant: {fileID: 0}
 --- !u!1 &1263106317
 GameObject:
   m_ObjectHideFlags: 0
@@ -1930,6 +1995,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1644617462}
+  - component: {fileID: 1644617463}
   m_Layer: 0
   m_Name: HandSlot_0
   m_TagString: Untagged
@@ -1946,12 +2012,26 @@ Transform:
   m_GameObject: {fileID: 1644617461}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.67, y: -4, z: 0}
+  m_LocalPosition: {x: 4.79, y: -4.19, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 947430581}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1644617463
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1644617461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56c338d8191d06549a899b5e24641e39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HandSlot
+  anchor: {fileID: 0}
+  occupant: {fileID: 0}
 --- !u!1 &1682360408
 GameObject:
   m_ObjectHideFlags: 0
@@ -2019,8 +2099,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 28
+  m_fontSizeBase: 28
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -2058,7 +2138,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 12.707092, w: 0}
+  m_margin: {x: 0, y: 0, z: -10.801834, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -2088,8 +2168,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -91, y: 126}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: -102.26468, y: 124}
+  m_SizeDelta: {x: 177.4707, y: 46}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2014380950
 GameObject:
@@ -2100,6 +2180,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2014380951}
+  - component: {fileID: 2014380952}
   m_Layer: 0
   m_Name: HandSlot_2
   m_TagString: Untagged
@@ -2116,12 +2197,26 @@ Transform:
   m_GameObject: {fileID: 2014380950}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 11.04, y: -4.36, z: 0}
+  m_LocalPosition: {x: 9.68, y: -4.32, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 947430581}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2014380952
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2014380950}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56c338d8191d06549a899b5e24641e39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HandSlot
+  anchor: {fileID: 0}
+  occupant: {fileID: 0}
 --- !u!1001 &8987829575503015486
 PrefabInstance:
   m_ObjectHideFlags: 0
