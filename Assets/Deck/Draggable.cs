@@ -16,7 +16,6 @@ public class Draggable : MonoBehaviour
     public static event System.Action<Draggable> OnDragStarted;
     public static event System.Action<Draggable> OnDragEnded;
 
-    /// <summary>True if this card is currently sitting in a Hand slot.</summary>
     public bool IsInHand => currentHandSlot != null;
 
     private Vector3 originalScale;
@@ -124,13 +123,13 @@ public class Draggable : MonoBehaviour
         pos.z = originalZ;
         transform.position = pos;
 
-        // 1) Discard zone — destroys the card.
-        //    If the card was on the battlefield (paid for), refund half its cost (rounded up).
+        DragState.Remove(this);
+
+        // 1) Discard zone
         DiscardZone discard = FindContainingDiscardZone(transform.position);
         if (discard != null)
         {
             bool wasOnBattlefield = (currentHandSlot == null && currentZone != null);
-
             if (wasOnBattlefield)
             {
                 Card card = GetComponent<Card>();
@@ -140,24 +139,18 @@ public class Draggable : MonoBehaviour
                     EnergyManager.Instance.Refund(Team.Player, refund);
                 }
             }
-
             if (currentHandSlot != null) currentHandSlot.Vacate(this);
             if (currentZone != null) currentZone.Vacate(this);
             OnDragEnded?.Invoke(this);
             Destroy(gameObject);
             return;
-
-            DragState.Remove(this); 
         }
 
-        // 2) Battlefield zone.
-        DropZone matchedZone = FindContainingZone(transform.position);
-
-        if (matchedZone != null)
+        // 2) Support Slot
+        SupportSlot matchedSupport = FindContainingSupportSlot(transform.position);
+        if (matchedSupport != null)
         {
             bool movingFromHand = (currentHandSlot != null);
-
-            // Coming from hand → charge energy.
             if (movingFromHand)
             {
                 Card card = GetComponent<Card>();
@@ -165,7 +158,6 @@ public class Draggable : MonoBehaviour
                 {
                     if (!EnergyManager.Instance.TrySpend(Team.Player, card.Cost))
                     {
-                        // Not enough energy — bounce back to hand.
                         isReturning = true;
                         OnDragEnded?.Invoke(this);
                         return;
@@ -173,7 +165,39 @@ public class Draggable : MonoBehaviour
                 }
             }
 
-            // Vacate old position.
+            if (currentZone != null) currentZone.Vacate(this);
+            if (currentHandSlot != null) currentHandSlot.Vacate(this);
+
+            currentHandSlot = null;
+            currentZone = null; 
+            matchedSupport.Occupy(this);
+
+            homePosition = new Vector3(matchedSupport.transform.position.x, matchedSupport.transform.position.y, originalZ);
+            transform.position = homePosition;
+            isReturning = false;
+            OnDragEnded?.Invoke(this);
+            return;
+        }
+
+        // 3) Battlefield zone
+        DropZone matchedZone = FindContainingZone(transform.position);
+        if (matchedZone != null)
+        {
+            bool movingFromHand = (currentHandSlot != null);
+            if (movingFromHand)
+            {
+                Card card = GetComponent<Card>();
+                if (card != null && EnergyManager.Instance != null)
+                {
+                    if (!EnergyManager.Instance.TrySpend(Team.Player, card.Cost))
+                    {
+                        isReturning = true;
+                        OnDragEnded?.Invoke(this);
+                        return;
+                    }
+                }
+            }
+
             if (currentZone != null && currentZone != matchedZone) currentZone.Vacate(this);
             if (currentHandSlot != null) currentHandSlot.Vacate(this);
 
@@ -181,28 +205,23 @@ public class Draggable : MonoBehaviour
             currentZone = matchedZone;
             matchedZone.Occupy(this);
 
-            homePosition = new Vector3(matchedZone.transform.position.x,
-                                       matchedZone.transform.position.y,
-                                       originalZ);
+            homePosition = new Vector3(matchedZone.transform.position.x, matchedZone.transform.position.y, originalZ);
             transform.position = homePosition;
             isReturning = false;
         }
         else
         {
-            // No valid target — return to where it came from.
             isReturning = true;
         }
 
-            OnDragEnded?.Invoke(this);
-        DragState.Remove(this);
-    
+        OnDragEnded?.Invoke(this);
     }
 
     private bool CanDragInCurrentPhase()
     {
         if (PhaseManager.Instance == null) return true;
         GamePhase phase = PhaseManager.Instance.currentPhase;
-        if (phase != GamePhase.Setup && phase != GamePhase.Recover) return false;
+        if (phase != GamePhase.Setup && phase != GamePhase.Support) return false;
 
         Card card = GetComponent<Card>();
         if (card != null && card.ownerId != Team.Player) return false;
@@ -215,6 +234,16 @@ public class Draggable : MonoBehaviour
         {
             if (zone != null && zone.Contains(worldPos) && zone.CanAccept(this))
                 return zone;
+        }
+        return null;
+    }
+
+    private SupportSlot FindContainingSupportSlot(Vector3 worldPos)
+    {
+        foreach (var slot in FindObjectsByType<SupportSlot>(FindObjectsInactive.Exclude))
+        {
+            if (slot != null && slot.Contains(worldPos) && slot.CanAccept(this))
+                return slot;
         }
         return null;
     }

@@ -12,25 +12,28 @@ public class Card : MonoBehaviour
     public int currentShield;
     public bool exhausted;
 
+    [Header("Buffs")]
+    public int temporaryDamageBonus = 0;
+    public int temporaryDamagePenalty = 0;
+
     public bool IsDead => currentHealth <= 0;
     public int Cost => data != null ? data.cost : 0;
+    public bool IsSupport => data != null && data.type == CardType.Support;
+    public int EffectiveDamage => Mathf.Max(0, damage + temporaryDamageBonus - temporaryDamagePenalty);
 
-    /// <summary>Fired just before this card is destroyed. Listen for cleanup / effects.</summary>
     public event Action<Card> OnDeath;
 
     public void Apply(CardData newData)
     {
-        if (newData == null)
-        {
-            Debug.LogWarning("[Card] Apply called with null CardData.", this);
-            return;
-        }
+        if (newData == null) return;
 
         data = newData;
         damage = newData.damage;
         currentHealth = newData.maxHealth;
         currentShield = newData.shield;
         exhausted = false;
+        temporaryDamageBonus = 0;
+        temporaryDamagePenalty = 0;
 
         gameObject.name = "Card_" + newData.cardName;
         RefreshVisual();
@@ -38,7 +41,7 @@ public class Card : MonoBehaviour
 
     public void TakeDamage(int amount)
     {
-        if (amount <= 0 || IsDead) return;
+        if (amount <= 0 || IsDead || IsSupport) return;
 
         int absorbed = Mathf.Min(currentShield, amount);
         currentShield -= absorbed;
@@ -51,6 +54,18 @@ public class Card : MonoBehaviour
         }
     }
 
+    public void Heal(int amount)
+    {
+        if (amount <= 0 || IsDead || IsSupport || data == null) return;
+        currentHealth = Mathf.Min(currentHealth + amount, data.maxHealth);
+    }
+
+    public void AddShield(int amount)
+    {
+        if (amount <= 0 || IsDead || IsSupport) return;
+        currentShield += amount;
+    }
+
     public void SetExhausted(bool value)
     {
         if (exhausted == value) return;
@@ -58,11 +73,10 @@ public class Card : MonoBehaviour
         RefreshVisual();
     }
 
-    /// <summary>Hook called during Recover phase. Both teams receive this call.
-    /// Support card effects will hook here later.</summary>
-    public void OnRecoverPhase()
+    public void ClearTemporaryBuffs()
     {
-        // No mechanical effect yet.
+        temporaryDamageBonus = 0;
+        temporaryDamagePenalty = 0;
     }
 
     private void Die()
@@ -79,13 +93,7 @@ public class Card : MonoBehaviour
         Color c = (data != null) ? data.tint : Color.white;
         if (c.a <= 0.01f) c.a = 1f;
 
-        if (exhausted)
-        {
-            c.r *= 0.5f;
-            c.g *= 0.5f;
-            c.b *= 0.5f;
-        }
-
+        if (exhausted) { c.r *= 0.5f; c.g *= 0.5f; c.b *= 0.5f; }
         sr.color = c;
     }
 }

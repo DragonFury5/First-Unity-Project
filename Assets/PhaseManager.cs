@@ -5,7 +5,7 @@ public enum GamePhase
 {
     Setup,
     Battle,
-    Recover,
+    Support,   // Renamed from Recover
     EnemyTurn
 }
 
@@ -24,7 +24,6 @@ public class PhaseManager : MonoBehaviour
     public static event Action<GamePhase> OnPhaseChanged;
 
     private int setupCount = 0;
-    private int enemyTurnCount = 0;
 
     void Awake()
     {
@@ -39,8 +38,8 @@ public class PhaseManager : MonoBehaviour
         switch (currentPhase)
         {
             case GamePhase.Setup:     StartPhase(GamePhase.Battle);    break;
-            case GamePhase.Battle:    StartPhase(GamePhase.Recover);   break;
-            case GamePhase.Recover:   StartPhase(GamePhase.EnemyTurn); break;
+            case GamePhase.Battle:    StartPhase(GamePhase.Support);   break;
+            case GamePhase.Support:   StartPhase(GamePhase.EnemyTurn); break;
             case GamePhase.EnemyTurn: StartPhase(GamePhase.Setup);     break;
         }
     }
@@ -56,7 +55,7 @@ public class PhaseManager : MonoBehaviour
         {
             case GamePhase.Setup:     HandleSetupPhase();     break;
             case GamePhase.Battle:    HandleBattlePhase();    break;
-            case GamePhase.Recover:   HandleRecoverPhase();   break;
+            case GamePhase.Support:   HandleSupportPhase();   break;
             case GamePhase.EnemyTurn: HandleEnemyTurn();      break;
         }
     }
@@ -70,8 +69,6 @@ public class PhaseManager : MonoBehaviour
 
         ClearExhaustForTeam(Team.Player);
 
-        // Per your rule: at the start of Setup, discard whatever is left in hand,
-        // then draw a fresh set. The hand is "replaced" every round.
         if (playerHand != null) playerHand.ClearAndDiscard();
 
         if (playerDeck != null)
@@ -86,26 +83,47 @@ public class PhaseManager : MonoBehaviour
 
     private void HandleBattlePhase() { }
 
-    private void HandleRecoverPhase()
+    private void HandleSupportPhase()
     {
-        Card[] all = FindObjectsByType<Card>(FindObjectsInactive.Exclude);
-        foreach (Card c in all) if (c != null) c.OnRecoverPhase();
+        // 1. Clear all temporary buffs from the previous round
+        Card[] allCards = FindObjectsByType<Card>(FindObjectsInactive.Exclude);
+        foreach (Card c in allCards)
+        {
+            if (c != null) c.ClearTemporaryBuffs();
+        }
+
+        // 2. Trigger OnRecover skills for both players
+        foreach (Card c in allCards)
+        {
+            if (c != null && c.IsSupport && !c.IsDead)
+            {
+                foreach (var skill in c.data.skills)
+                {
+                    if (skill.trigger == SupportTrigger.OnRecover)
+                    {
+                        SkillResolver.ApplySkill(skill, c);
+                    }
+                }
+            }
+        }
     }
 
     private void HandleEnemyTurn()
     {
-        enemyTurnCount++;
-
-        if (enemyTurnCount > 1 && EnergyManager.Instance != null)
+        if (EnergyManager.Instance != null)
             EnergyManager.Instance.RefillForTeam(Team.Enemy);
 
         ClearExhaustForTeam(Team.Enemy);
+
+        // EnemyAI listens to the PhaseChanged event and will automatically attack and advance the phase.
     }
 
     private void ClearExhaustForTeam(int team)
     {
-        Card[] all = FindObjectsByType<Card>(FindObjectsInactive.Exclude);
-        foreach (Card c in all)
+        Card[] allCards = FindObjectsByType<Card>(FindObjectsInactive.Exclude);
+        foreach (Card c in allCards)
+        {
             if (c != null && c.ownerId == team) c.SetExhausted(false);
+        }
     }
 }

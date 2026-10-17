@@ -146,7 +146,7 @@ public class CardSelector : MonoBehaviour
 
         if (target != null)
         {
-            int dmg = attacker.damage;
+             int dmg = attacker.EffectiveDamage; // <-- CHANGED HERE
             if (EnemyAI.Instance != null)
                 EnemyAI.Instance.ShowDamagePopUp(target.transform.position, dmg);
 
