@@ -3,18 +3,14 @@ using UnityEngine;
 public class DropZone : MonoBehaviour
 {
     [Header("Slot Bounds")]
-    [Tooltip("Width and Height of the drop target in world units. Should match your card size (slightly larger).")]
+    [Tooltip("Width and Height of the hitbox. Does NOT scale the sprites anymore.")]
     public Vector2 size = new Vector2(1.5f, 2.2f);
 
     [Header("Ownership")]
-    [Tooltip("Only cards owned by this team may be placed here.")]
     public int ownerTeam = Team.Player;
 
     [Header("Renderers (children)")]
-    [Tooltip("Hollow border sprite. Always visible.")]
     public SpriteRenderer outlineRenderer;
-
-    [Tooltip("Solid fill sprite. Fades in only during a matching drag.")]
     public SpriteRenderer fillRenderer;
 
     [Header("Alpha")]
@@ -65,21 +61,8 @@ public class DropZone : MonoBehaviour
         Draggable.OnDragEnded -= HandleDragEnded;
     }
 
-    void HandleDragStarted(Draggable d)
-    {
-        if (d == null) return;
-
-        // Only brighten for draggers that belong to this zone's team.
-        Card card = d.GetComponent<Card>();
-        if (card != null && card.ownerId != ownerTeam) return;
-
-        // Lerp target — handled in Update.
-    }
-
-    void HandleDragEnded(Draggable d)
-    {
-        // Lerp target — handled in Update.
-    }
+    void HandleDragStarted(Draggable d) { }
+    void HandleDragEnded(Draggable d) { }
 
     void Update()
     {
@@ -92,9 +75,6 @@ public class DropZone : MonoBehaviour
 
     private bool IsMatchingDragActive()
     {
-        // Fallback: scan for any active drag from the matching team.
-        // Simpler and stateless; fine for a handful of zones.
-        // Hooked via events would be faster, but requires tracking per-zone state.
         return DragState.AnyMatchingDragActive(ownerTeam);
     }
 
@@ -129,20 +109,5 @@ public class DropZone : MonoBehaviour
         Gizmos.DrawCube(transform.position, new Vector3(size.x, size.y, 0.1f));
         Gizmos.color = Color.green;
         Gizmos.DrawWireCube(transform.position, new Vector3(size.x, size.y, 0.1f));
-    }
-
-    void OnValidate()
-    {
-        ScaleRendererToSize(outlineRenderer);
-        ScaleRendererToSize(fillRenderer);
-        ApplyOutlineColor();
-    }
-
-    private void ScaleRendererToSize(SpriteRenderer rend)
-    {
-        if (rend == null || rend.sprite == null) return;
-        Vector2 b = rend.sprite.bounds.size;
-        if (b.x <= 0f || b.y <= 0f) return;
-        rend.transform.localScale = new Vector3(size.x / b.x, size.y / b.y, 1f);
     }
 }

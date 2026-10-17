@@ -193,7 +193,9 @@ public class Draggable : MonoBehaviour
             isReturning = true;
         }
 
-        OnDragEnded?.Invoke(this);
+            OnDragEnded?.Invoke(this);
+        DragState.Remove(this);
+    
     }
 
     private bool CanDragInCurrentPhase()
