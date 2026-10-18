@@ -60,7 +60,7 @@ public class PhaseManager : MonoBehaviour
         }
     }
 
-    private void HandleSetupPhase()
+        private void HandleSetupPhase()
     {
         setupCount++;
 
@@ -69,11 +69,19 @@ public class PhaseManager : MonoBehaviour
 
         ClearExhaustForTeam(Team.Player);
 
+        // 1. Wipe the old hand
         if (playerHand != null) playerHand.ClearAndDiscard();
 
+        // 2. Draw a brand new full hand
         if (playerDeck != null)
         {
-            for (int i = 0; i < cardsToDrawInSetup; i++) playerDeck.DrawCard();
+            // If we have a hand, draw up to its capacity. Otherwise, use the fallback number.
+            int drawCount = playerHand != null ? playerHand.Capacity : cardsToDrawInSetup;
+            
+            for (int i = 0; i < drawCount; i++) 
+            {
+                playerDeck.DrawCard();
+            }
         }
         else
         {

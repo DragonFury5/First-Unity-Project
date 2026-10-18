@@ -103,7 +103,7 @@ public class EnemyAI : MonoBehaviour
         return null;
     }
 
-    private Card FindLowestHpPlayerCard()
+       private Card FindLowestHpPlayerCard()
     {
         Card[] all = FindObjectsByType<Card>(FindObjectsInactive.Exclude);
         Card best = null;
@@ -112,6 +112,14 @@ public class EnemyAI : MonoBehaviour
         foreach (Card c in all)
         {
             if (c == null || c.ownerId != Team.Player || c.IsDead) continue;
+            
+            // NEW: Skip cards sitting in the player's hand
+            Draggable d = c.GetComponent<Draggable>();
+            if (d != null && d.IsInHand) continue;
+
+            // NEW: Skip Support cards (they are protected)
+            if (c.IsSupport) continue;
+
             if (c.currentHealth < bestHp)
             {
                 bestHp = c.currentHealth;
