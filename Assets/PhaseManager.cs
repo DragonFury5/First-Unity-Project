@@ -33,8 +33,14 @@ public class PhaseManager : MonoBehaviour
 
     void Start() { StartPhase(GamePhase.Setup); }
 
+        // Add this variable near the top of the class
+    [HideInInspector] public bool isTransitionLocked = false;
+
     public void AdvancePhase()
     {
+        // NEW: If the game is locked (e.g., enemy is attacking), ignore button clicks
+        if (isTransitionLocked) return;
+
         switch (currentPhase)
         {
             case GamePhase.Setup:     StartPhase(GamePhase.Battle);    break;
@@ -43,7 +49,6 @@ public class PhaseManager : MonoBehaviour
             case GamePhase.EnemyTurn: StartPhase(GamePhase.Setup);     break;
         }
     }
-
     public void StartPhase(GamePhase newPhase)
     {
         currentPhase = newPhase;

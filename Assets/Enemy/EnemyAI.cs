@@ -55,14 +55,22 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    private IEnumerator EnemyTurnRoutine()
+        private IEnumerator EnemyTurnRoutine()
     {
+        // LOCK the phase button so the player can't skip while the enemy is attacking
+        if (PhaseManager.Instance != null)
+            PhaseManager.Instance.isTransitionLocked = true;
+
         yield return new WaitForSeconds(preTurnDelay);
         yield return EnemyAttackRoutine();
         yield return new WaitForSeconds(postTurnDelay);
 
+        // UNLOCK and advance automatically
         if (PhaseManager.Instance != null)
+        {
+            PhaseManager.Instance.isTransitionLocked = false;
             PhaseManager.Instance.AdvancePhase(); // EnemyTurn → Setup
+        }
     }
 
     private IEnumerator EnemyAttackRoutine()
