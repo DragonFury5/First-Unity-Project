@@ -12,13 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 735765aed9a156b4eaca8665e51ab757, type: 3}
   m_Name: ArchusMagus
   m_EditorClassIdentifier: Assembly-CSharp::CardData
-  cardName: New Card
-  type: 0
-  sprite: {fileID: 0}
+  cardName: ArchusMagus
+  type: 1
+  sprite: {fileID: -5513050994037168576, guid: 95256085fb29cb644a59bdb3844cbaf4, type: 3}
   tint: {r: 1, g: 1, b: 1, a: 1}
   maxHealth: 10
   damage: 2
   shield: 0
-  cost: 1
-  skills: []
+  cost: 2
+  skills:
+  - skillName: EnergyFill
+    trigger: 1
+    effectType: 1
+    amount: 0
+    target: 3
+    description: 
   description: 

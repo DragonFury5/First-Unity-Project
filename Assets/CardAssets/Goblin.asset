@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   cardName: Goblin
   type: 0
-  sprite: {fileID: 8083194656293017254, guid: 7775b609a537a504fa39304ab3c7d47f, type: 3}
+  sprite: {fileID: -235533455086519170, guid: 23b8ac752f6f95849ae8b382f8d5128b, type: 3}
   tint: {r: 1, g: 1, b: 1, a: 1}
   maxHealth: 4
   damage: 2
   shield: 0
   cost: 1
+  skills: []
   description: 

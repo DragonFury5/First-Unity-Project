@@ -36,7 +36,21 @@ public class Card : MonoBehaviour
         temporaryDamagePenalty = 0;
 
         gameObject.name = "Card_" + newData.cardName;
-        RefreshVisual();
+
+        SpriteRenderer sr = GetComponent<SpriteRenderer>();
+        if (sr != null)
+        {
+            if (newData.sprite != null) sr.sprite = newData.sprite;
+            else Debug.LogWarning("CardData " + newData.cardName + " has NO SPRITE assigned!");
+
+            Color c = newData.tint;
+            if (c.a <= 0.01f) c.a = 1f;
+            sr.color = c;
+        }
+        else
+        {
+            Debug.LogError("CARD PREFAB IS MISSING A SPRITE RENDERER!");
+        }
     }
 
     public void TakeDamage(int amount)
