@@ -1,12 +1,13 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Collider2D))]
 public class SupportSlot : MonoBehaviour
 {
     [Header("Ownership")]
     public int ownerTeam = Team.Player;
 
     [Header("Visuals")]
-    public SpriteRenderer auraRenderer; // A purple square/glow
+    public SpriteRenderer auraRenderer;
     [Range(0f, 1f)] public float idleAlpha = 0.2f;
     [Range(0f, 1f)] public float dragAlpha = 0.6f;
     public float fadeSpeed = 10f;
@@ -15,29 +16,31 @@ public class SupportSlot : MonoBehaviour
     [HideInInspector] public Draggable occupant;
 
     private float currentAlpha;
+    private Collider2D col;
+
     public bool IsOccupied => occupant != null;
+
+    void Awake()
+    {
+        col = GetComponent<Collider2D>();
+        currentAlpha = idleAlpha;
+        ApplyAlpha(currentAlpha);
+    }
 
     public bool CanAccept(Draggable d)
     {
         if (d == null) return false;
-        if (occupant == d) return true; // Already here, just drop back
-        if (occupant != null) return false; // Slot full
+        if (occupant == d) return true;
+        if (occupant != null) return false;
 
         Card card = d.GetComponent<Card>();
         if (card == null || card.data == null) return false;
 
-        // Only accept Support cards from the matching team
         return card.data.type == CardType.Support && card.ownerId == ownerTeam;
     }
 
     public void Occupy(Draggable d) { occupant = d; }
     public void Vacate(Draggable d) { if (occupant == d) occupant = null; }
-
-    void Awake()
-    {
-        currentAlpha = idleAlpha;
-        ApplyAlpha(currentAlpha);
-    }
 
     void Update()
     {
@@ -58,11 +61,22 @@ public class SupportSlot : MonoBehaviour
         }
     }
 
+    // NEW: Uses the Collider instead of hardcoded math
     public bool Contains(Vector2 point)
     {
-        // Adjust this based on your Support slot size (e.g., 1.5 x 2.2)
-        Vector2 pos = transform.position;
-        return point.x >= pos.x - 0.75f && point.x <= pos.x + 0.75f &&
-               point.y >= pos.y - 1.1f && point.y <= pos.y + 1.1f;
+        return col != null && col.OverlapPoint(point);
+    }
+
+    void OnDrawGizmos()
+    {
+        Collider2D c = GetComponent<Collider2D>();
+        if (c != null)
+        {
+            Bounds b = c.bounds;
+            Gizmos.color = new Color(0.7f, 0f, 1f, 0.35f); // Purple Gizmo
+            Gizmos.DrawCube(b.center, b.size);
+            Gizmos.color = new Color(0.7f, 0f, 1f, 1f);
+            Gizmos.DrawWireCube(b.center, b.size);
+        }
     }
 }

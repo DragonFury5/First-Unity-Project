@@ -114,7 +114,7 @@ public class Draggable : MonoBehaviour
         DragState.Add(this);
     }
 
-    public void EndDrag()
+        public void EndDrag()
     {
         if (!isDragging) return;
         isDragging = false;
@@ -146,7 +146,7 @@ public class Draggable : MonoBehaviour
             return;
         }
 
-        // 2) Support Slot
+        // 2) Support Slot  <--- THIS IS THE PART THAT MIGHT BE MISSING
         SupportSlot matchedSupport = FindContainingSupportSlot(transform.position);
         if (matchedSupport != null)
         {
@@ -170,7 +170,11 @@ public class Draggable : MonoBehaviour
 
             currentHandSlot = null;
             currentZone = null; 
-            matchedSupport.Occupy(this);
+                      matchedSupport.Occupy(this);
+
+            // ADD THIS LINE TO TRIGGER ON-DEPLOY SKILLS:
+            Card myCard = GetComponent<Card>();
+            if (myCard != null) SkillResolver.ResolveSupportSkills(myCard);
 
             homePosition = new Vector3(matchedSupport.transform.position.x, matchedSupport.transform.position.y, originalZ);
             transform.position = homePosition;
@@ -183,6 +187,7 @@ public class Draggable : MonoBehaviour
         DropZone matchedZone = FindContainingZone(transform.position);
         if (matchedZone != null)
         {
+            // ... (rest of the DropZone logic)
             bool movingFromHand = (currentHandSlot != null);
             if (movingFromHand)
             {

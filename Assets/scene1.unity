@@ -389,7 +389,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29f11f15d29361d4796bc1405da27868, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SupportSlot
-  ownerTeam: 1
+  ownerTeam: 2
   auraRenderer: {fileID: 2016415419}
   idleAlpha: 0.2
   dragAlpha: 0.6
@@ -506,6 +506,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: f26898db5b7b75d4aad56c17fd480f29, type: 2}
   - {fileID: 11400000, guid: f26898db5b7b75d4aad56c17fd480f29, type: 2}
   - {fileID: 11400000, guid: f26898db5b7b75d4aad56c17fd480f29, type: 2}
+  - {fileID: 11400000, guid: 9da591da827aa02458b362bcfcf8672a, type: 2}
   enemyDropZones:
   - {fileID: 1524797674}
   - {fileID: 97919482}
@@ -948,7 +949,7 @@ Transform:
   m_GameObject: {fileID: 507698206}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.13, y: -1.52, z: 0}
+  m_LocalPosition: {x: -0.07, y: 0.02, z: 0}
   m_LocalScale: {x: 2.438, y: 3.5301, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2944,6 +2945,7 @@ GameObject:
   - component: {fileID: 2037064924}
   - component: {fileID: 2037064923}
   - component: {fileID: 2037064922}
+  - component: {fileID: 2037064925}
   m_Layer: 0
   m_Name: SupportPlace
   m_TagString: Untagged
@@ -3038,13 +3040,59 @@ Transform:
   m_GameObject: {fileID: 2037064921}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8.34, y: -2.82, z: 0}
+  m_LocalPosition: {x: 10.2, y: -4.82, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 507698208}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!61 &2037064925
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2037064921}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: -0.3387084, y: -0.04317522}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 3.85608, y: 4.360203}
+  m_EdgeRadius: 0
 --- !u!1001 &3082309178761688141
 PrefabInstance:
   m_ObjectHideFlags: 0

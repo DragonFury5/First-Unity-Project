@@ -29,13 +29,18 @@ public class DropZone : MonoBehaviour
 
     public bool IsOccupied => occupant != null;
 
-    public bool CanAccept(Draggable d)
+        public bool CanAccept(Draggable d)
     {
         if (d == null) return false;
         if (occupant != null && occupant != d) return false;
 
         Card card = d.GetComponent<Card>();
         if (card == null) return true;
+
+        // 1. Reject Support cards entirely (they can't go on the battlefield)
+        if (card.data != null && card.data.type == CardType.Support) return false;
+
+        // 2. Check team
         return card.ownerId == ownerTeam;
     }
 

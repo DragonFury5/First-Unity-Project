@@ -19,12 +19,12 @@ MonoBehaviour:
   maxHealth: 10
   damage: 2
   shield: 0
-  cost: 2
+  cost: 5
   skills:
   - skillName: EnergyFill
-    trigger: 1
+    trigger: 0
     effectType: 1
-    amount: 0
+    amount: 3
     target: 3
     description: 
   description: 

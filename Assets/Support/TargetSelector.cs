@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class TargetSelector : MonoBehaviour
 {
@@ -28,30 +29,35 @@ public class TargetSelector : MonoBehaviour
         validTargets.Clear();
         originalScales.Clear();
 
-        // Find every card on the board
         Card[] allCards = FindObjectsByType<Card>(FindObjectsInactive.Exclude);
         
         foreach (var c in allCards)
         {
-            if (c == null || c.IsDead || c.IsSupport) continue; // Can't target Support cards
+            if (c == null || c.IsDead || c.IsSupport) continue;
+
+            Draggable d = c.GetComponent<Draggable>();
+            if (d != null && d.IsInHand) continue;
 
             bool isAlly = c.ownerId == selectingTeam;
             
-            // If we want allies, and it's an ally. Or if we want enemies, and it's an enemy.
             if ((targetAllies && isAlly) || (!targetAllies && !isAlly))
             {
                 validTargets.Add(c);
                 originalScales.Add(c.transform.localScale);
                 
-                // Visual Highlight: Grow the card slightly so the player knows they can click it
-                c.transform.localScale *= 1.15f; 
+                // 50% BIGGER so you can clearly see it's targetable!
+                c.transform.localScale *= 1.5f; 
             }
         }
 
         if (validTargets.Count == 0)
         {
-            Debug.Log("[TargetSelector] No valid targets found. Cancelling.");
+            Debug.LogWarning("[TargetSelector] No valid targets on the battlefield. Cancelling.");
             EndSelection();
+        }
+        else
+        {
+            Debug.Log($"[TargetSelector] Targeting Mode STARTED. {validTargets.Count} cards are glowing/bigger. Click one!");
         }
     }
 
@@ -59,15 +65,16 @@ public class TargetSelector : MonoBehaviour
     {
         if (!isSelecting) return;
 
-        // Right-click cancels targeting
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            return;
+
         if (Input.GetMouseButtonDown(1))
         {
-            Debug.Log("[TargetSelector] Cancelled targeting.");
+            Debug.Log("[TargetSelector] Right-click detected. Cancelling.");
             EndSelection();
             return;
         }
 
-        // Left-click confirms targeting
         if (Input.GetMouseButtonDown(0))
         {
             Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -80,14 +87,17 @@ public class TargetSelector : MonoBehaviour
                 
                 if (clickedCard != null && validTargets.Contains(clickedCard))
                 {
+                    Debug.Log($"[TargetSelector] Valid target clicked! Applying effect to {clickedCard.name}");
+                    
                     var cb = onTargetSelected;
                     var target = clickedCard;
                     
-                    EndSelection(); // Reset visuals first
-                    cb?.Invoke(target);  // Then fire the skill
+                    EndSelection();
+                    cb?.Invoke(target);
                     return;
                 }
             }
+            Debug.Log("[TargetSelector] Clicked, but missed any valid targets.");
         }
     }
 
