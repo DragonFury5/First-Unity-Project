@@ -29,10 +29,11 @@ public class PhaseManager : MonoBehaviour
     private int setupCount = 0;
 
     void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
-    }
+{
+    if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+    Instance = this;
+    isTransitionLocked = false;   // <-- add this
+}
 
     void Start() { StartPhase(GamePhase.Setup); }
 

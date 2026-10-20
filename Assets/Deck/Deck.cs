@@ -1,6 +1,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Infinite-deck Deck (tutorial build).
+/// - DrawCard picks from `cards` with replacement — the pool never depletes.
+/// - The visible deck sprite is cosmetic. When you add the "card flies from
+///   deck sprite to hand" animation, do it in the DrawCard path (or a tween
+///   spawned right after Instantiate).
+/// - The discard pile is also cosmetic. ReturnCard() is the hook — call your
+///   "card flies to discard sprite" tween from there.
+/// </summary>
 public class Deck : MonoBehaviour
 {
     [Header("Ownership")]
@@ -19,30 +28,12 @@ public class Deck : MonoBehaviour
     [Header("Debug")]
     public bool debugLogs = false;
 
-    private List<CardData> remaining;
-
-    void Start() { ResetDeck(); }
-
-    public void ResetDeck()
-    {
-        remaining = new List<CardData>();
-        foreach (var c in cards)
-        {
-            if (c == null)
-            {
-                Debug.LogWarning($"[Deck] Null entry in cards list on {gameObject.name}. Skipping.", this);
-                continue;
-            }
-            remaining.Add(c);
-        }
-    }
-
-    /// <summary>Returns a card's data to the draw pool (i.e. the discard pile).</summary>
+    /// <summary>Discard hook. Currently a no-op — the deck is infinite.
+    /// Future: play the "fly to discard pile" animation here.</summary>
     public void ReturnCard(CardData data)
     {
-        if (data == null) return;
-        if (remaining == null) remaining = new List<CardData>();
-        remaining.Add(data);
+        if (debugLogs && data != null)
+            Debug.Log($"[Deck] Discarded '{data.cardName}' (infinite deck — no data change).");
     }
 
     public Card DrawCard()
@@ -53,21 +44,17 @@ public class Deck : MonoBehaviour
             return null;
         }
 
-        if (remaining == null) ResetDeck();
-
-        if (remaining.Count == 0)
+        if (cards == null || cards.Count == 0)
         {
-            if (debugLogs) Debug.Log("[Deck] Draw failed — every card is already in play.");
+            Debug.LogWarning($"[Deck] No CardData in deck on {gameObject.name}.", this);
             return null;
         }
 
-        int index = Random.Range(0, remaining.Count);
-        CardData picked = remaining[index];
-        remaining.RemoveAt(index);
+        CardData picked = cards[Random.Range(0, cards.Count)];
 
         if (picked == null)
         {
-            Debug.LogWarning("[Deck] Picked a null CardData. Skipping this draw.", this);
+            Debug.LogWarning($"[Deck] Picked a null CardData on {gameObject.name}. Check the cards list in the Inspector.", this);
             return null;
         }
 
@@ -98,6 +85,9 @@ public class Deck : MonoBehaviour
 
         return card;
     }
+
+    // Backward-compat shim. Nothing needs to "reset" anymore — the pool never depletes.
+    public void ResetDeck() { }
 
     void OnValidate()
     {
