@@ -118,16 +118,19 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    private Card FindFirstReadyEnemy()
+   private Card FindFirstReadyEnemy()
+{
+    Card[] all = FindObjectsByType<Card>(FindObjectsInactive.Exclude);
+    foreach (Card c in all)
     {
-        Card[] all = FindObjectsByType<Card>(FindObjectsInactive.Exclude);
-        foreach (Card c in all)
-        {
-            if (c != null && c.ownerId == Team.Enemy && !c.exhausted && !c.IsDead)
-                return c;
-        }
-        return null;
+        if (c == null) continue;
+        if (c.ownerId != Team.Enemy) continue;
+        if (c.exhausted || c.IsDead) continue;
+        if (c.IsSupport) continue;   // <-- the fix
+        return c;
     }
+    return null;
+}
 
     private Card FindLowestHpPlayerCard()
     {
