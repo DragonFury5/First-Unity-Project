@@ -17,8 +17,6 @@ public class Draggable : MonoBehaviour
     public static event System.Action<Draggable> OnDragEnded;
 
     public bool IsInHand => currentHandSlot != null;
-
-    public bool IsInHand => currentHandSlot != null;
 public bool IsInSupportSlot => currentSupportSlot != null;   // <-- add this
 
     private Vector3 originalScale;
