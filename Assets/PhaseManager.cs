@@ -24,6 +24,7 @@ public class PhaseManager : MonoBehaviour
     public static event Action<GamePhase> OnPhaseChanged;
 
     [HideInInspector] public bool isTransitionLocked = false;
+    public int RoundNumber => setupCount;
 
     private int setupCount = 0;
 
