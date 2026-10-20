@@ -23,10 +23,7 @@ public class EnergyUI : MonoBehaviour
         PhaseManager.OnPhaseChanged -= HandlePhaseChanged;
     }
 
-    void Start()
-    {
-        Refresh();
-    }
+    void Start() { Refresh(); }
 
     private void HandleEnergyChanged(int team)
     {
@@ -43,7 +40,7 @@ public class EnergyUI : MonoBehaviour
         EnergyPool pool = EnergyManager.Instance.GetPool(teamToDisplay);
         if (pool == null) return;
 
-        int displayMax = Mathf.Min(pool.NextTurnTarget(), pool.cap);
+        int displayMax = pool.NextTurnTarget(); // already clamps to cap
         label.text = showMax
             ? $"{prefix}{pool.current}/{displayMax}"
             : $"{prefix}{pool.current}";

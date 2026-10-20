@@ -5,7 +5,7 @@ public enum GamePhase
 {
     Setup,
     Battle,
-    Support,   // Renamed from Recover
+    Support,
     EnemyTurn
 }
 
@@ -23,6 +23,8 @@ public class PhaseManager : MonoBehaviour
 
     public static event Action<GamePhase> OnPhaseChanged;
 
+    [HideInInspector] public bool isTransitionLocked = false;
+
     private int setupCount = 0;
 
     void Awake()
@@ -33,12 +35,8 @@ public class PhaseManager : MonoBehaviour
 
     void Start() { StartPhase(GamePhase.Setup); }
 
-        // Add this variable near the top of the class
-    [HideInInspector] public bool isTransitionLocked = false;
-
     public void AdvancePhase()
     {
-        // NEW: If the game is locked (e.g., enemy is attacking), ignore button clicks
         if (isTransitionLocked) return;
 
         switch (currentPhase)
@@ -49,12 +47,11 @@ public class PhaseManager : MonoBehaviour
             case GamePhase.EnemyTurn: StartPhase(GamePhase.Setup);     break;
         }
     }
+
     public void StartPhase(GamePhase newPhase)
     {
         currentPhase = newPhase;
         Debug.Log($"[PhaseManager] Entering Phase: {currentPhase}");
-
-        OnPhaseChanged?.Invoke(currentPhase);
 
         switch (currentPhase)
         {
@@ -63,9 +60,12 @@ public class PhaseManager : MonoBehaviour
             case GamePhase.Support:   HandleSupportPhase();   break;
             case GamePhase.EnemyTurn: HandleEnemyTurn();      break;
         }
+
+        // Fire AFTER the handler — listeners see the new phase in a fully initialized state.
+        OnPhaseChanged?.Invoke(currentPhase);
     }
 
-        private void HandleSetupPhase()
+    private void HandleSetupPhase()
     {
         setupCount++;
 
@@ -74,19 +74,13 @@ public class PhaseManager : MonoBehaviour
 
         ClearExhaustForTeam(Team.Player);
 
-        // 1. Wipe the old hand
         if (playerHand != null) playerHand.ClearAndDiscard();
 
-        // 2. Draw a brand new full hand
         if (playerDeck != null)
         {
-            // If we have a hand, draw up to its capacity. Otherwise, use the fallback number.
             int drawCount = playerHand != null ? playerHand.Capacity : cardsToDrawInSetup;
-            
-            for (int i = 0; i < drawCount; i++) 
-            {
+            for (int i = 0; i < drawCount; i++)
                 playerDeck.DrawCard();
-            }
         }
         else
         {
@@ -97,29 +91,30 @@ public class PhaseManager : MonoBehaviour
     private void HandleBattlePhase() { }
 
     private void HandleSupportPhase()
-    {
-        // 1. Clear all temporary buffs from the previous round
-        Card[] allCards = FindObjectsByType<Card>(FindObjectsInactive.Exclude);
-        foreach (Card c in allCards)
-        {
-            if (c != null) c.ClearTemporaryBuffs();
-        }
+{
+    Card[] allCards = FindObjectsByType<Card>(FindObjectsInactive.Exclude);
 
-        // 2. Trigger OnRecover skills for both players
-        foreach (Card c in allCards)
+    // 1. Clear temporary buffs from the previous round
+    foreach (Card c in allCards)
+    {
+        if (c != null) c.ClearTemporaryBuffs();
+    }
+
+    // 2. Fire OnRecover skills ONLY for supports that are deployed in a SupportSlot
+    foreach (Card c in allCards)
+    {
+        if (c == null || !c.IsSupport || c.IsDead) continue;
+
+        Draggable d = c.GetComponent<Draggable>();
+        if (d == null || !d.IsInSupportSlot) continue;   // <-- the fix
+
+        foreach (var skill in c.data.skills)
         {
-            if (c != null && c.IsSupport && !c.IsDead)
-            {
-                foreach (var skill in c.data.skills)
-                {
-                    if (skill.trigger == SupportTrigger.OnRecover)
-                    {
-                        SkillResolver.ApplySkill(skill, c);
-                    }
-                }
-            }
+            if (skill.trigger == SupportTrigger.OnRecover)
+                SkillResolver.ApplySkill(skill, c);
         }
     }
+}
 
     private void HandleEnemyTurn()
     {
@@ -127,8 +122,6 @@ public class PhaseManager : MonoBehaviour
             EnergyManager.Instance.RefillForTeam(Team.Enemy);
 
         ClearExhaustForTeam(Team.Enemy);
-
-        // EnemyAI listens to the PhaseChanged event and will automatically attack and advance the phase.
     }
 
     private void ClearExhaustForTeam(int team)

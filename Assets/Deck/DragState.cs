@@ -1,9 +1,5 @@
 using System.Collections.Generic;
 
-/// <summary>
-/// Tracks which Draggables are currently being dragged, globally.
-/// Zones query this to decide whether to show their fill.
-/// </summary>
 public static class DragState
 {
     private static readonly HashSet<Draggable> active = new HashSet<Draggable>();
@@ -17,7 +13,7 @@ public static class DragState
         {
             if (d == null) continue;
             var card = d.GetComponent<Card>();
-            if (card == null || card.ownerId == ownerTeam) return true;
+            if (card != null && card.ownerId == ownerTeam) return true;
         }
         return false;
     }

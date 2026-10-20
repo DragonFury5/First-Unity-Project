@@ -46,8 +46,13 @@ public class Hand : MonoBehaviour
         {
             if (slot == null || slot.occupant == null) continue;
             GameObject go = slot.occupant.gameObject;
+            if (go != null)
+            {
+                Card card = go.GetComponent<Card>();
+                if (card != null) card.ReturnToDeck();   // synchronous — deck is refilled before next draw
+                Destroy(go);
+            }
             slot.Vacate(slot.occupant);
-            if (go != null) Destroy(go);
         }
     }
 }

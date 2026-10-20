@@ -18,6 +18,9 @@ public class Draggable : MonoBehaviour
 
     public bool IsInHand => currentHandSlot != null;
 
+    public bool IsInHand => currentHandSlot != null;
+public bool IsInSupportSlot => currentSupportSlot != null;   // <-- add this
+
     private Vector3 originalScale;
     private Vector3 homePosition;
     private Vector3 grabOffset;
@@ -25,6 +28,7 @@ public class Draggable : MonoBehaviour
 
     private DropZone currentZone;
     private HandSlot currentHandSlot;
+    private SupportSlot currentSupportSlot;
 
     private bool isDragging;
     private bool isReturning;
@@ -52,6 +56,15 @@ public class Draggable : MonoBehaviour
         homePosition = new Vector3(newHome.x, newHome.y, originalZ);
         currentHandSlot = handSlot;
         currentZone = null;
+        currentSupportSlot = null;
+    }
+
+    void OnDestroy()
+    {
+        DragState.Remove(this);
+        if (currentHandSlot != null) currentHandSlot.Vacate(this);
+        if (currentZone != null) currentZone.Vacate(this);
+        if (currentSupportSlot != null) currentSupportSlot.Vacate(this);
     }
 
     void Update()
@@ -114,7 +127,7 @@ public class Draggable : MonoBehaviour
         DragState.Add(this);
     }
 
-        public void EndDrag()
+    public void EndDrag()
     {
         if (!isDragging) return;
         isDragging = false;
@@ -129,24 +142,37 @@ public class Draggable : MonoBehaviour
         DiscardZone discard = FindContainingDiscardZone(transform.position);
         if (discard != null)
         {
-            bool wasOnBattlefield = (currentHandSlot == null && currentZone != null);
-            if (wasOnBattlefield)
+            bool wasOnBoard = (currentHandSlot == null) &&
+                              (currentZone != null || currentSupportSlot != null);
+
+            if (wasOnBoard)
             {
                 Card card = GetComponent<Card>();
                 if (card != null && card.ownerId == Team.Player && EnergyManager.Instance != null)
                 {
-                    int refund = Mathf.CeilToInt(card.Cost / 2f);
+                    int refund;
+                    if (card.IsSupport)
+                        refund = Mathf.Max(0, (card.Cost - 1) / 2);   // Q5: (cost-1)/2 int-div
+                    else
+                        refund = Mathf.CeilToInt(card.Cost / 2f);     // Q1: ceil(cost/2)
+
                     EnergyManager.Instance.Refund(Team.Player, refund);
                 }
             }
+
             if (currentHandSlot != null) currentHandSlot.Vacate(this);
             if (currentZone != null) currentZone.Vacate(this);
+            if (currentSupportSlot != null) currentSupportSlot.Vacate(this);
+
+            Card selfCard = GetComponent<Card>();
+            if (selfCard != null) selfCard.ReturnToDeck();
+
             OnDragEnded?.Invoke(this);
             Destroy(gameObject);
             return;
         }
 
-        // 2) Support Slot  <--- THIS IS THE PART THAT MIGHT BE MISSING
+        // 2) Support slot
         SupportSlot matchedSupport = FindContainingSupportSlot(transform.position);
         if (matchedSupport != null)
         {
@@ -167,14 +193,15 @@ public class Draggable : MonoBehaviour
 
             if (currentZone != null) currentZone.Vacate(this);
             if (currentHandSlot != null) currentHandSlot.Vacate(this);
+            if (currentSupportSlot != null && currentSupportSlot != matchedSupport)
+                currentSupportSlot.Vacate(this);
 
             currentHandSlot = null;
-            currentZone = null; 
-                      matchedSupport.Occupy(this);
+            currentZone = null;
+            currentSupportSlot = matchedSupport;
+            matchedSupport.Occupy(this);
 
-            // ADD THIS LINE TO TRIGGER ON-DEPLOY SKILLS:
-            Card myCard = GetComponent<Card>();
-            if (myCard != null) SkillResolver.ResolveSupportSkills(myCard);
+            // OnDeploy skill firing removed per Q2 — only OnRecover fires now.
 
             homePosition = new Vector3(matchedSupport.transform.position.x, matchedSupport.transform.position.y, originalZ);
             transform.position = homePosition;
@@ -187,7 +214,6 @@ public class Draggable : MonoBehaviour
         DropZone matchedZone = FindContainingZone(transform.position);
         if (matchedZone != null)
         {
-            // ... (rest of the DropZone logic)
             bool movingFromHand = (currentHandSlot != null);
             if (movingFromHand)
             {
@@ -205,8 +231,10 @@ public class Draggable : MonoBehaviour
 
             if (currentZone != null && currentZone != matchedZone) currentZone.Vacate(this);
             if (currentHandSlot != null) currentHandSlot.Vacate(this);
+            if (currentSupportSlot != null) currentSupportSlot.Vacate(this);
 
             currentHandSlot = null;
+            currentSupportSlot = null;
             currentZone = matchedZone;
             matchedZone.Occupy(this);
 

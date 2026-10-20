@@ -12,6 +12,10 @@ public class Card : MonoBehaviour
     public int currentShield;
     public bool exhausted;
 
+    [Header("Deck Origin")]
+    public Deck sourceDeck;
+    [HideInInspector] public bool returnedToDeck;
+
     [Header("Buffs")]
     public int temporaryDamageBonus = 0;
     public int temporaryDamagePenalty = 0;
@@ -34,6 +38,7 @@ public class Card : MonoBehaviour
         exhausted = false;
         temporaryDamageBonus = 0;
         temporaryDamagePenalty = 0;
+        returnedToDeck = false;
 
         gameObject.name = "Card_" + newData.cardName;
 
@@ -51,6 +56,15 @@ public class Card : MonoBehaviour
         {
             Debug.LogError("CARD PREFAB IS MISSING A SPRITE RENDERER!");
         }
+    }
+
+    // Idempotent — safe to call from anywhere.
+    public void ReturnToDeck()
+    {
+        if (returnedToDeck) return;
+        returnedToDeck = true;
+        if (sourceDeck != null && data != null)
+            sourceDeck.ReturnCard(data);
     }
 
     public void TakeDamage(int amount)
@@ -95,8 +109,14 @@ public class Card : MonoBehaviour
 
     private void Die()
     {
+        ReturnToDeck();          // synchronous, before anyone listens
         OnDeath?.Invoke(this);
         Destroy(gameObject);
+    }
+
+    void OnDestroy()
+    {
+        ReturnToDeck();          // fallback for direct Destroy() calls
     }
 
     private void RefreshVisual()

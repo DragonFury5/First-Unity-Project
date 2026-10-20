@@ -2,9 +2,15 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public enum CardType { Unit, Support }
+
+// Note: OnDeploy is kept for asset-serialization compatibility, but is no
+// longer processed anywhere. Only OnRecover fires.
 public enum SupportTrigger { OnDeploy, OnRecover }
+
 public enum SupportEffectType { Heal, GrantShield, BuffDamage, DirectDamage, Refresh, DebuffDamage }
-public enum SupportTarget { SelfOnly, AllAllies, AllEnemies, SingleAlly, SingleEnemy }
+
+// SelfOnly deleted per design call.
+public enum SupportTarget { AllAllies, AllEnemies, SingleAlly, SingleEnemy }
 
 [System.Serializable]
 public class SupportSkill

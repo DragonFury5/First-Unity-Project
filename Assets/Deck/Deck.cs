@@ -26,8 +26,6 @@ public class Deck : MonoBehaviour
     public void ResetDeck()
     {
         remaining = new List<CardData>();
-
-        // Filter out any null/invalid entries so DrawCard can trust the list.
         foreach (var c in cards)
         {
             if (c == null)
@@ -39,6 +37,14 @@ public class Deck : MonoBehaviour
         }
     }
 
+    /// <summary>Returns a card's data to the draw pool (i.e. the discard pile).</summary>
+    public void ReturnCard(CardData data)
+    {
+        if (data == null) return;
+        if (remaining == null) remaining = new List<CardData>();
+        remaining.Add(data);
+    }
+
     public Card DrawCard()
     {
         if (cardPrefab == null)
@@ -47,11 +53,11 @@ public class Deck : MonoBehaviour
             return null;
         }
 
-        if (remaining == null || remaining.Count == 0) ResetDeck();
+        if (remaining == null) ResetDeck();
 
-        if (remaining == null || remaining.Count == 0)
+        if (remaining.Count == 0)
         {
-            Debug.LogWarning($"[Deck] No valid CardData in deck on {gameObject.name}.", this);
+            if (debugLogs) Debug.Log("[Deck] Draw failed — every card is already in play.");
             return null;
         }
 
@@ -61,7 +67,6 @@ public class Deck : MonoBehaviour
 
         if (picked == null)
         {
-            // Belt and suspenders — should never happen after ResetDeck filtering.
             Debug.LogWarning("[Deck] Picked a null CardData. Skipping this draw.", this);
             return null;
         }
@@ -82,6 +87,7 @@ public class Deck : MonoBehaviour
 
         card.Apply(picked);
         card.ownerId = ownerId;
+        card.sourceDeck = this;
 
         if (targetHand != null && !targetHand.AddCard(card))
         {
@@ -93,7 +99,6 @@ public class Deck : MonoBehaviour
         return card;
     }
 
-    // Warn in the Inspector if the list has blanks, so you catch it before playing.
     void OnValidate()
     {
         for (int i = 0; i < cards.Count; i++)

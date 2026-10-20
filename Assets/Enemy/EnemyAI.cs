@@ -34,6 +34,9 @@ public class EnemyAI : MonoBehaviour
     {
         if (cardPrefab == null || enemyDeckData.Count == 0) return;
 
+        // Only spawn when the enemy side is completely wiped (Q3).
+        if (AnyEnemyUnitsAlive()) return;
+
         foreach (var zone in enemyDropZones)
         {
             if (zone == null || zone.IsOccupied) continue;
@@ -55,21 +58,36 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-        private IEnumerator EnemyTurnRoutine()
+    private bool AnyEnemyUnitsAlive()
     {
-        // LOCK the phase button so the player can't skip while the enemy is attacking
+        Card[] all = FindObjectsByType<Card>(FindObjectsInactive.Exclude);
+        foreach (Card c in all)
+        {
+            if (c == null || c.IsDead || c.IsSupport) continue;
+            if (c.ownerId == Team.Enemy) return true;
+        }
+        return false;
+    }
+
+    private IEnumerator EnemyTurnRoutine()
+    {
         if (PhaseManager.Instance != null)
             PhaseManager.Instance.isTransitionLocked = true;
 
-        yield return new WaitForSeconds(preTurnDelay);
-        yield return EnemyAttackRoutine();
-        yield return new WaitForSeconds(postTurnDelay);
-
-        // UNLOCK and advance automatically
-        if (PhaseManager.Instance != null)
+        try
         {
-            PhaseManager.Instance.isTransitionLocked = false;
-            PhaseManager.Instance.AdvancePhase(); // EnemyTurn → Setup
+            yield return new WaitForSeconds(preTurnDelay);
+            yield return EnemyAttackRoutine();
+            yield return new WaitForSeconds(postTurnDelay);
+        }
+        finally
+        {
+            if (PhaseManager.Instance != null)
+            {
+                PhaseManager.Instance.isTransitionLocked = false;
+                if (PhaseManager.Instance.currentPhase == GamePhase.EnemyTurn)
+                    PhaseManager.Instance.AdvancePhase();
+            }
         }
     }
 
@@ -111,7 +129,7 @@ public class EnemyAI : MonoBehaviour
         return null;
     }
 
-       private Card FindLowestHpPlayerCard()
+    private Card FindLowestHpPlayerCard()
     {
         Card[] all = FindObjectsByType<Card>(FindObjectsInactive.Exclude);
         Card best = null;
@@ -120,12 +138,9 @@ public class EnemyAI : MonoBehaviour
         foreach (Card c in all)
         {
             if (c == null || c.ownerId != Team.Player || c.IsDead) continue;
-            
-            // NEW: Skip cards sitting in the player's hand
+
             Draggable d = c.GetComponent<Draggable>();
             if (d != null && d.IsInHand) continue;
-
-            // NEW: Skip Support cards (they are protected)
             if (c.IsSupport) continue;
 
             if (c.currentHealth < bestHp)
