@@ -67,28 +67,36 @@ public class PhaseManager : MonoBehaviour
         OnPhaseChanged?.Invoke(currentPhase);
     }
 
-    private void HandleSetupPhase()
+   private void HandleSetupPhase()
+{
+    setupCount++;
+
+    if (setupCount > 1 && EnergyManager.Instance != null)
+        EnergyManager.Instance.RefillForTeam(Team.Player);
+
+    ClearExhaustForTeam(Team.Player);
+
+    if (playerHand != null) playerHand.ClearAndDiscard();
+
+    if (playerDeck != null && playerHand != null)
     {
-        setupCount++;
+        int drawCount = playerHand.Capacity;
 
-        if (setupCount > 1 && EnergyManager.Instance != null)
-            EnergyManager.Instance.RefillForTeam(Team.Player);
-
-        ClearExhaustForTeam(Team.Player);
-
-        if (playerHand != null) playerHand.ClearAndDiscard();
-
-        if (playerDeck != null)
-        {
-            int drawCount = playerHand != null ? playerHand.Capacity : cardsToDrawInSetup;
-            for (int i = 0; i < drawCount; i++)
-                playerDeck.DrawCard();
-        }
-        else
-        {
-            Debug.LogWarning("[PhaseManager] Player Deck is not assigned!");
-        }
+        // Lock phase advance while cards are flying in.
+        isTransitionLocked = true;
+        playerDeck.DrawCardsAnimated(drawCount, playerHand);
     }
+    else if (playerDeck != null)
+    {
+        // Fallback: no hand assigned, use legacy synchronous draw
+        for (int i = 0; i < cardsToDrawInSetup; i++)
+            playerDeck.DrawCard();
+    }
+    else
+    {
+        Debug.LogWarning("[PhaseManager] Player Deck is not assigned!");
+    }
+}
 
     private void HandleBattlePhase() { }
 

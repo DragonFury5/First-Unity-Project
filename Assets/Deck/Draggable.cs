@@ -11,6 +11,8 @@ public class Draggable : MonoBehaviour
     public float zLift = -0.5f;
     public float returnSpeed = 12f;
 
+    
+
     [HideInInspector] public bool autoBeginDrag;
 
     public static event System.Action<Draggable> OnDragStarted;
@@ -18,6 +20,9 @@ public class Draggable : MonoBehaviour
 
     public bool IsInHand => currentHandSlot != null;
 public bool IsInSupportSlot => currentSupportSlot != null;   // <-- add this
+
+/// <summary>Blocks drag input while the card is animating (e.g. deck→hand flight).</summary>
+public bool IsFlying { get; set; }
 
     private Vector3 originalScale;
     private Vector3 homePosition;
@@ -100,6 +105,7 @@ public bool IsInSupportSlot => currentSupportSlot != null;   // <-- add this
 
     public void BeginDrag()
     {
+        if (IsFlying) return;     
         if (!CanDragInCurrentPhase()) return;
         if (isDragging) return;
 
