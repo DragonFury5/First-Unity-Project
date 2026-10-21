@@ -120,14 +120,22 @@ public class Card : MonoBehaviour
     }
 
     private void RefreshVisual()
+{
+    SpriteRenderer sr = GetComponent<SpriteRenderer>();
+    if (sr == null) return;
+
+    Color c = (data != null) ? data.tint : Color.white;
+    if (c.a <= 0.01f) c.a = 1f;
+
+    // Only the player needs to see which of their cards are exhausted.
+    // Enemy exhaustion is AI-internal state and shouldn't be surfaced.
+    if (exhausted && ownerId == Team.Player)
     {
-        SpriteRenderer sr = GetComponent<SpriteRenderer>();
-        if (sr == null) return;
-
-        Color c = (data != null) ? data.tint : Color.white;
-        if (c.a <= 0.01f) c.a = 1f;
-
-        if (exhausted) { c.r *= 0.5f; c.g *= 0.5f; c.b *= 0.5f; }
-        sr.color = c;
+        c.r *= 0.5f;
+        c.g *= 0.5f;
+        c.b *= 0.5f;
     }
+
+    sr.color = c;
+}
 }

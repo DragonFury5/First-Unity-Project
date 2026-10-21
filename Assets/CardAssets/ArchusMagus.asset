@@ -22,9 +22,9 @@ MonoBehaviour:
   cost: 5
   skills:
   - skillName: EnergyFill
-    trigger: 0
+    trigger: 1
     effectType: 1
     amount: 3
-    target: 3
+    target: 2
     description: 
   description: 
